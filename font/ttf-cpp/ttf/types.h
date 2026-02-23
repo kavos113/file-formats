@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <stdexcept>
+#include <format>
 
 using uint8 = uint8_t;
 using int8 = int8_t;
@@ -52,6 +53,21 @@ inline Tag make_tag_str(const std::string& str)
         throw std::invalid_argument("Tag string must be exactly 4 characters long");
     }
     return make_tag(str[0], str[1], str[2], str[3]);
+}
+
+inline std::string tag_to_string(Tag tag)
+{
+    return std::string{
+        static_cast<char>((tag >> 24) & 0xFF),
+        static_cast<char>((tag >> 16) & 0xFF),
+        static_cast<char>((tag >> 8) & 0xFF),
+        static_cast<char>(tag & 0xFF)
+    };
+}
+
+inline std::string version16dot16_to_string(Version16Dot16 version)
+{
+    return std::format("{}.{}", version >> 16, version & 0xFFFF);
 }
 
 #endif // TTF_TYPES_H
