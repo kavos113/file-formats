@@ -67,7 +67,7 @@ template<typename CharT, typename Traits>
 std::basic_ostream<CharT, Traits>&
     operator<<(std::basic_ostream<CharT, Traits>& os, const TTFTableDirectory& directory)
 {
-    std::string versionStr = "";
+    std::string versionStr;
     if (directory.sfnt_version == 0x00010000)
     {
         versionStr = "TrueType";

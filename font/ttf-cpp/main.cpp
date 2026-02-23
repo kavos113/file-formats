@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "ttf/table_directory.h"
+#include "tables/os2.h"
 
 int main(int argc, char* argv[])
 {
