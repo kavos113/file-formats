@@ -1,7 +1,9 @@
+#ifndef TABLES_OS2_IO_H
+#define TABLES_OS2_IO_H
+
 #include "os2.h"
 
 #include "util/util.h"
-
 #include <format>
 
 template<typename CharT, typename Traits>
@@ -12,18 +14,25 @@ std::basic_istream<CharT, Traits>&
     is.read(reinterpret_cast<char*>(&version), sizeof(uint16));
     is.seekg(-static_cast<std::streamoff>(sizeof(uint16)), std::ios::cur);
 
+    endian_swap(&version, sizeof(uint16));
+
     switch (version)
     {
     case 0:
-        return is >> os2.v0;
+        os2 = OS2_V0{};
+        return is >> std::get<OS2_V0>(os2);
     case 1:
-        return is >> os2.v1;
+        os2 = OS2_V1{};
+        return is >> std::get<OS2_V1>(os2);
     case 2:
     case 3:
     case 4:
-        return is >> os2.v4;
+        os2 = OS2_V4{};
+        return is >> std::get<OS2_V4>(os2);
     case 5:
-        return is >> os2.v5;
+        os2 = OS2_V5{};
+        return is >> std::get<OS2_V5>(os2);
+
     default:
         throw std::runtime_error("Unsupported OS/2 table version: " + std::to_string(version));
     }
@@ -33,23 +42,14 @@ template <typename CharT, typename Traits>
 std::basic_ostream<CharT, Traits>&
     operator<<(std::basic_ostream<CharT, Traits>& os, const OS2Table& os2)
 {
-    os << std::format("OS/2 Table (version {})\n", os2.v0.version);
+    os << "\n-----------------------------------------------------------------\n"
+       <<  std::format("OS/2 Table (version {})\n", std::visit([](const auto& os2) { return os2.version; }, os2));
 
-    switch (os2.v0.version)
-    {
-    case 0:
-        return os << os2.v0;
-    case 1:
-        return os << os2.v1;
-    case 2:
-    case 3:
-    case 4:
-        return os << os2.v4;
-    case 5:
-        return os << os2.v5;
-    default:
-        throw std::runtime_error("Unsupported OS/2 table version: " + std::to_string(os2.v0.version));
-    }
+    std::visit([&os](const auto& os2) { os << os2; }, os2);
+
+    os << "-----------------------------------------------------------------\n";
+
+    return os;
 }
 
 template <typename CharT, typename Traits>
@@ -87,6 +87,8 @@ std::basic_istream<CharT, Traits>&
     endian_swap(&os2.sTypoLineGap, sizeof(FWORD));
     endian_swap(&os2.usWinAscent, sizeof(UFWORD));
     endian_swap(&os2.usWinDescent, sizeof(UFWORD));
+
+    return is;
 }
 
 template <typename CharT, typename Traits>
@@ -403,3 +405,6 @@ std::basic_ostream<CharT, Traits>&
 
     return os;
 }
+
+
+#endif // TABLES_OS2_IO_H

@@ -37,6 +37,19 @@ struct TTFTableDirectory
     uint16 entry_selector;
     uint16 range_shift;
     std::vector<TTFTableRecord> table_records;
+
+    const TTFTableRecord& find_table_record(const std::string& tag) const
+    {
+        Tag tagValue = make_tag_str(tag);
+        for (const auto& record : table_records)
+        {
+            if (record.tag == tagValue)
+            {
+                return record;
+            }
+        }
+        throw std::runtime_error("Table not found: " + tag);
+    }
 };
 
 template<typename CharT, typename Traits>

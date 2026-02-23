@@ -4,6 +4,7 @@
 #include "ttf/types.h"
 
 #include <iostream>
+#include <variant>
 
 #pragma pack(push, 1)
 struct OS2_V5
@@ -168,52 +169,6 @@ struct OS2_V0
 };
 #pragma pack(pop)
 
-union OS2Table
-{
-    OS2_V0 v0;
-    OS2_V1 v1;
-    OS2_V4 v4;
-    OS2_V5 v5;
-};
-
-template<typename CharT, typename Traits>
-std::basic_istream<CharT, Traits>&
-    operator>>(std::basic_istream<CharT, Traits>& is, OS2Table& os2);
-
-template<typename CharT, typename Traits>
-std::basic_ostream<CharT, Traits>&
-    operator<<(std::basic_ostream<CharT, Traits>& os, const OS2Table& os2);
-
-template<typename CharT, typename Traits>
-std::basic_istream<CharT, Traits>&
-    operator>>(std::basic_istream<CharT, Traits>& is, OS2_V0& os2);
-
-template<typename CharT, typename Traits>
-std::basic_ostream<CharT, Traits>&
-    operator<<(std::basic_ostream<CharT, Traits>& os, const OS2_V0& os2);
-
-template<typename CharT, typename Traits>
-std::basic_istream<CharT, Traits>&
-    operator>>(std::basic_istream<CharT, Traits>& is, OS2_V1& os2);
-
-template<typename CharT, typename Traits>
-std::basic_ostream<CharT, Traits>&
-    operator<<(std::basic_ostream<CharT, Traits>& os, const OS2_V1& os2);
-
-template<typename CharT, typename Traits>
-std::basic_istream<CharT, Traits>&
-    operator>>(std::basic_istream<CharT, Traits>& is, OS2_V4& os2);
-
-template<typename CharT, typename Traits>
-std::basic_ostream<CharT, Traits>&
-    operator<<(std::basic_ostream<CharT, Traits>& os, const OS2_V4& os2);
-
-template<typename CharT, typename Traits>
-std::basic_istream<CharT, Traits>&
-    operator>>(std::basic_istream<CharT, Traits>& is, OS2_V5& os2);
-
-template<typename CharT, typename Traits>
-std::basic_ostream<CharT, Traits>&
-    operator<<(std::basic_ostream<CharT, Traits>& os, const OS2_V5& os2);
+using OS2Table = std::variant<OS2_V0, OS2_V1, OS2_V4, OS2_V5>;
 
 #endif // TABLES_OS2_H
