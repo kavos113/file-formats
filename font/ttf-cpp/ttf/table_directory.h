@@ -1,9 +1,11 @@
 #ifndef TTF_TABLE_DIRECTORY_H
 #define TTF_TABLE_DIRECTORY_H
 
+
 #include "types.h"
 #include "util/util.h"
 
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <format>
@@ -73,6 +75,11 @@ std::basic_istream<CharT, Traits>&
     {
         is >> directory.table_records[i];
     }
+
+    std::sort(directory.table_records.begin(), directory.table_records.end(), [](const TTFTableRecord& a, const TTFTableRecord& b) {
+        return a.offset < b.offset;
+    });
+
     return is;
 }
 
