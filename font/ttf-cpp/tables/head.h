@@ -3,6 +3,8 @@
 
 #include "ttf/types.h"
 
+#include <iostream>
+
 #pragma pack(push, 1)
 struct HeadTable
 {
@@ -26,5 +28,13 @@ struct HeadTable
     int16 glyphDataFormat;
 };
 #pragma pack(pop)
+
+template<typename CharT, typename Traits>
+std::basic_istream<CharT, Traits>&
+    operator>>(std::basic_istream<CharT, Traits>& is, HeadTable& head);
+
+template<typename CharT, typename Traits>
+std::basic_ostream<CharT, Traits>&
+    operator<<(std::basic_ostream<CharT, Traits>& os, const HeadTable& head);
 
 #endif //TABLES_HEAD_H

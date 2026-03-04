@@ -4,6 +4,8 @@
 #include "ttf/table_directory.h"
 #include "tables/os2.h"
 #include "tables/os2_io.h"
+#include "tables/head.h"
+#include "tables/head_io.h"
 
 int main(int argc, char* argv[])
 {
@@ -29,6 +31,12 @@ int main(int argc, char* argv[])
     OS2Table os2;
     fontFile >> os2;
     std::cout << os2;
+
+    TTFTableRecord head_record = directory.find_table_record("head");
+    fontFile.seekg(head_record.offset, std::ios::beg);
+    HeadTable head;
+    fontFile >> head;
+    std::cout << head;
 
     return 0;
 }

@@ -5,6 +5,7 @@
 #include <string>
 #include <stdexcept>
 #include <format>
+#include <chrono>
 
 using uint8 = uint8_t;
 using int8 = int8_t;
@@ -68,6 +69,17 @@ inline std::string tag_to_string(Tag tag)
 inline std::string version16dot16_to_string(Version16Dot16 version)
 {
     return std::format("{}.{}", version >> 16, version & 0xFFFF);
+}
+
+inline std::string longdatetime_to_string(LONGDATETIME datetime)
+{
+    using namespace std::chrono;
+
+    constexpr int64_t SECONDS_FROM_1904_TO_1970 = 2082844800;
+    sys_seconds tp{seconds{datetime - SECONDS_FROM_1904_TO_1970}};
+    zoned_time zt{current_zone(), tp};
+
+    return std::format("{:%Y-%m-%d %H:%M:%S}", zt);
 }
 
 #endif // TTF_TYPES_H
