@@ -6,6 +6,8 @@
 #include "tables/os2_io.h"
 #include "tables/head.h"
 #include "tables/head_io.h"
+#include "tables/hhea.h"
+#include "tables/hhea_io.h"
 
 int main(int argc, char* argv[])
 {
@@ -37,6 +39,12 @@ int main(int argc, char* argv[])
     HeadTable head;
     fontFile >> head;
     std::cout << head;
+
+    TTFTableRecord hhea_record = directory.find_table_record("hhea");
+    fontFile.seekg(hhea_record.offset, std::ios::beg);
+    HHEATable hhea;
+    fontFile >> hhea;
+    std::cout << hhea;
 
     return 0;
 }

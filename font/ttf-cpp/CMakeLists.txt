@@ -10,6 +10,8 @@ add_executable(ttf_cpp main.cpp
         tables/os2.h
         tables/os2_io.h
         tables/head.h
-        tables/head_io.h)
+        tables/head_io.h
+        tables/hhea.h
+        tables/hhea_io.h)
 
 target_include_directories(ttf_cpp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
