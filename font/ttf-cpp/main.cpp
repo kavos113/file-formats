@@ -8,6 +8,8 @@
 #include "tables/head_io.h"
 #include "tables/hhea.h"
 #include "tables/hhea_io.h"
+#include "tables/maxp.h"
+#include "tables/maxp_io.h"
 
 int main(int argc, char* argv[])
 {
@@ -45,6 +47,12 @@ int main(int argc, char* argv[])
     HHEATable hhea;
     fontFile >> hhea;
     std::cout << hhea;
+
+    TTFTableRecord maxp_record = directory.find_table_record("maxp");
+    fontFile.seekg(maxp_record.offset, std::ios::beg);
+    MaxpTable maxp;
+    fontFile >> maxp;
+    std::cout << maxp;
 
     return 0;
 }
