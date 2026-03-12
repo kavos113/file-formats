@@ -1,6 +1,6 @@
 use std::fs;
 use std::str::Lines;
-use crate::img::Image;
+use crate::img::{Image, Pixel};
 
 pub fn load_ppm(path: &str) -> Image {
     let data = fs::read_to_string(path).expect("Failed to read file");
@@ -8,11 +8,19 @@ pub fn load_ppm(path: &str) -> Image {
 
     let (width, height) = parse_header(&mut lines);
 
-    let mut pixels = Vec::with_capacity((width * height * 3) as usize);
+    let mut pixels = Vec::with_capacity((width * height) as usize);
     for line in lines {
-        for value in line.split_whitespace() {
-            let val: u8 = value.parse().expect("Invalid pixel value");
-            pixels.push(val);
+        let mut values = line.split_whitespace();
+        if let (Some(r), Some(g), Some(b)) = (values.next(), values.next(), values.next()) {
+            let r: u8 = r.parse().expect("Invalid red value");
+            let g: u8 = g.parse().expect("Invalid green value");
+            let b: u8 = b.parse().expect("Invalid blue value");
+            pixels.push(Pixel{
+                r,
+                g,
+                b,
+                a: 255, // Default alpha value
+            });
         }
     }
 
@@ -35,8 +43,8 @@ fn parse_header(lines: &mut Lines) -> (u32, u32) {
 
 pub fn save_ppm(image: &Image, path: &str) {
     let mut data = format!("P3\n{} {}\n255\n", image.width, image.height);
-    for chunk in image.data.chunks(3) {
-        data.push_str(&format!("{} {} {}\n", chunk[0], chunk[1], chunk[2]));
+    for pixel in &image.data {
+        data.push_str(&format!("{} {} {}\n", pixel.r, pixel.g, pixel.b));
     }
     fs::write(path, data).expect("Failed to write file");
 }
@@ -50,7 +58,12 @@ mod tests {
         let image = Image {
             width: 2,
             height: 2,
-            data: vec![255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0],
+            data: vec![
+                Pixel { r: 255, g: 0, b: 0, a: 255 },
+                Pixel { r: 0, g: 255, b: 0, a: 255 },
+                Pixel { r: 0, g: 0, b: 255, a: 255 },
+                Pixel { r: 255, g: 255, b: 0, a: 255 },
+            ],
         };
         save_ppm(&image, "test_output.ppm");
 
