@@ -40,3 +40,24 @@ pub fn save_ppm(image: &Image, path: &str) {
     }
     fs::write(path, data).expect("Failed to write file");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_and_save_ppm() {
+        let image = Image {
+            width: 2,
+            height: 2,
+            data: vec![255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0],
+        };
+        save_ppm(&image, "test_output.ppm");
+
+        let loaded_image = load_ppm("test_output.ppm");
+
+        assert_eq!(image.width, loaded_image.width);
+        assert_eq!(image.height, loaded_image.height);
+        assert_eq!(image.data, loaded_image.data);
+    }
+}
