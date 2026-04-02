@@ -73,8 +73,8 @@ impl Resources {
             command_list.RSSetViewports(&[self.view_port]);
             command_list.RSSetScissorRects(&[self.scissor_rect]);
             command_list.IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            self.vertex_resource.record_draw_commands(command_list);
             self.pipeline.record_commands(command_list);
+            self.vertex_resource.record_draw_commands(command_list);
 
             self.vertex_resource.render(command_list);
         }

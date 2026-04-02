@@ -11,9 +11,7 @@ use windows::Win32::Graphics::Direct3D12::{
     D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_TEXTURE_LAYOUT_UNKNOWN, D3D12_VERTEX_BUFFER_VIEW,
     ID3D12DescriptorHeap, ID3D12Device, ID3D12GraphicsCommandList, ID3D12Resource,
 };
-use windows::Win32::Graphics::Dxgi::Common::{
-    DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, DXGI_SAMPLE_DESC,
-};
+use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, DXGI_SAMPLE_DESC};
 
 struct Vertex {
     position: [f32; 3],
@@ -300,7 +298,7 @@ impl Object {
         let index_buffer_view = D3D12_INDEX_BUFFER_VIEW {
             BufferLocation: unsafe { index_buffer.GetGPUVirtualAddress() },
             SizeInBytes: index_buffer_size as u32,
-            Format: DXGI_FORMAT_UNKNOWN, // Use appropriate format for indices (e.g., DXGI_FORMAT_R16_UINT)
+            Format: DXGI_FORMAT_R16_UINT
         };
 
         (index_buffer, index_buffer_view)
