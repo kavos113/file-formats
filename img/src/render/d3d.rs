@@ -1,11 +1,12 @@
 mod device;
+mod object;
 mod pipeline;
 mod resource;
 
 use crate::render::d3d::device::Device;
 use crate::render::d3d::resource::Resources;
-use windows::Win32::Foundation::HWND;
 use crate::render::renderer::Renderer;
+use windows::Win32::Foundation::HWND;
 
 pub struct D3DRenderer {
     device: Device,

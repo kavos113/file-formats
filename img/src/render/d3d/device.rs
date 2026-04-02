@@ -5,9 +5,9 @@ use windows::Win32::Graphics::Direct3D12::{
     D3D12CreateDevice, D3D12GetDebugInterface, ID3D12Debug1, ID3D12Device,
 };
 use windows::Win32::Graphics::Dxgi::{
-    CreateDXGIFactory2, IDXGIAdapter1, IDXGIFactory7, DXGI_ADAPTER_DESC1, DXGI_ADAPTER_FLAG,
-    DXGI_ADAPTER_FLAG_NONE, DXGI_ADAPTER_FLAG_SOFTWARE, DXGI_CREATE_FACTORY_DEBUG,
-    DXGI_ERROR_ACCESS_DENIED, DXGI_ERROR_NOT_FOUND, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
+    CreateDXGIFactory2, DXGI_ADAPTER_DESC1, DXGI_ADAPTER_FLAG, DXGI_ADAPTER_FLAG_NONE,
+    DXGI_ADAPTER_FLAG_SOFTWARE, DXGI_CREATE_FACTORY_DEBUG, DXGI_ERROR_ACCESS_DENIED,
+    DXGI_ERROR_NOT_FOUND, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IDXGIAdapter1, IDXGIFactory7,
 };
 
 pub struct Device {
@@ -35,7 +35,9 @@ fn enable_debug() {
         Ok(_) => (),
         Err(hr) => {
             if hr.code() == DXGI_ERROR_ACCESS_DENIED {
-                println!("Warning: Failed to enable D3D12 debug layer: Access Denied. Make sure you have the necessary permissions.");
+                println!(
+                    "Warning: Failed to enable D3D12 debug layer: Access Denied. Make sure you have the necessary permissions."
+                );
             } else {
                 println!("Warning: Failed to enable D3D12 debug layer: {:?}", hr);
             }

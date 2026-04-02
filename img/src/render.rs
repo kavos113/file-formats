@@ -1,2 +1,2 @@
-mod renderer;
 mod d3d;
+mod renderer;

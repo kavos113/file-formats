@@ -1,6 +1,6 @@
+use crate::img::{Image, Pixel};
 use std::fs;
 use std::str::Lines;
-use crate::img::{Image, Pixel};
 
 pub fn load_ppm(path: &str) -> Image {
     let data = fs::read_to_string(path).expect("Failed to read file");
@@ -15,7 +15,7 @@ pub fn load_ppm(path: &str) -> Image {
             let r: u8 = r.parse().expect("Invalid red value");
             let g: u8 = g.parse().expect("Invalid green value");
             let b: u8 = b.parse().expect("Invalid blue value");
-            pixels.push(Pixel{
+            pixels.push(Pixel {
                 r,
                 g,
                 b,
@@ -24,7 +24,11 @@ pub fn load_ppm(path: &str) -> Image {
         }
     }
 
-    Image { width, height, data: pixels }
+    Image {
+        width,
+        height,
+        data: pixels,
+    }
 }
 
 fn parse_header(lines: &mut Lines) -> (u32, u32) {
@@ -35,8 +39,16 @@ fn parse_header(lines: &mut Lines) -> (u32, u32) {
 
     let dimensions = lines.next().expect("Missing dimensions");
     let mut dims = dimensions.split_whitespace();
-    let width: u32 = dims.next().expect("Missing width").parse().expect("Invalid width");
-    let height: u32 = dims.next().expect("Missing height").parse().expect("Invalid height");
+    let width: u32 = dims
+        .next()
+        .expect("Missing width")
+        .parse()
+        .expect("Invalid width");
+    let height: u32 = dims
+        .next()
+        .expect("Missing height")
+        .parse()
+        .expect("Invalid height");
 
     (width, height)
 }
@@ -59,10 +71,30 @@ mod tests {
             width: 2,
             height: 2,
             data: vec![
-                Pixel { r: 255, g: 0, b: 0, a: 255 },
-                Pixel { r: 0, g: 255, b: 0, a: 255 },
-                Pixel { r: 0, g: 0, b: 255, a: 255 },
-                Pixel { r: 255, g: 255, b: 0, a: 255 },
+                Pixel {
+                    r: 255,
+                    g: 0,
+                    b: 0,
+                    a: 255,
+                },
+                Pixel {
+                    r: 0,
+                    g: 255,
+                    b: 0,
+                    a: 255,
+                },
+                Pixel {
+                    r: 0,
+                    g: 0,
+                    b: 255,
+                    a: 255,
+                },
+                Pixel {
+                    r: 255,
+                    g: 255,
+                    b: 0,
+                    a: 255,
+                },
             ],
         };
         save_ppm(&image, "test_output.ppm");

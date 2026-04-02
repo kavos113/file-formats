@@ -1,7 +1,7 @@
 pub struct Image {
     pub width: u32,
     pub height: u32,
-    pub data: Vec<Pixel>
+    pub data: Vec<Pixel>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

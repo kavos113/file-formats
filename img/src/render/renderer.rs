@@ -1,14 +1,14 @@
 use crate::render::d3d::D3DRenderer;
-use windows::core::{w, PCWSTR};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::UpdateWindow;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, LoadCursorW, LoadIconW,
-    PostQuitMessage, RegisterClassExW, ShowWindow, TranslateMessage, CS_HREDRAW, CS_VREDRAW,
-    IDC_ARROW, IDI_APPLICATION, MSG, SW_SHOW, WINDOW_EX_STYLE, WM_DESTROY, WNDCLASSEXW,
+    CS_HREDRAW, CS_VREDRAW, CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW,
+    IDC_ARROW, IDI_APPLICATION, LoadCursorW, LoadIconW, MSG, PostQuitMessage, RegisterClassExW,
+    SW_SHOW, ShowWindow, TranslateMessage, WINDOW_EX_STYLE, WM_DESTROY, WNDCLASSEXW,
     WS_OVERLAPPEDWINDOW,
 };
+use windows::core::{PCWSTR, w};
 
 pub trait Renderer {
     fn new(hwnd: &HWND) -> Self
