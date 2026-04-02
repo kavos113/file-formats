@@ -3,6 +3,7 @@ mod object;
 mod pipeline;
 mod resource;
 
+use crate::img::Image;
 use crate::render::d3d::device::Device;
 use crate::render::d3d::resource::Resources;
 use crate::render::renderer::Renderer;
@@ -14,12 +15,14 @@ pub struct D3DRenderer {
 }
 
 impl Renderer for D3DRenderer {
-    fn new(hwnd: &HWND) -> Self
+    fn new(hwnd: &HWND, img: &Image) -> Self
     where
         Self: Sized,
     {
         let device = Device::new();
-        let resources = Resources::new(&device.device, &device.dxgi_factory, hwnd);
+        let mut resources = Resources::new(&device.device, &device.dxgi_factory, hwnd);
+
+        resources.load_image(&device.device, img);
 
         Self { device, resources }
     }

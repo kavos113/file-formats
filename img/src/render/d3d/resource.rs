@@ -1,3 +1,4 @@
+use crate::img::Image;
 use crate::render::d3d::object::Object;
 use crate::render::d3d::pipeline::Pipeline;
 use windows::Win32::Foundation::{HANDLE, HWND, RECT};
@@ -75,12 +76,16 @@ impl Resources {
             self.vertex_resource.record_draw_commands(command_list);
             self.pipeline.record_commands(command_list);
 
-            command_list.DrawInstanced(3, 1, 0, 0);
+            self.vertex_resource.render(command_list);
         }
 
         self.display.end_frame(command_list, frame_index);
         self.commands.end_frame();
         self.display.present();
+    }
+
+    pub fn load_image(&mut self, device: &ID3D12Device, img: &Image) {
+        self.vertex_resource.load_image(device, img);
     }
 }
 

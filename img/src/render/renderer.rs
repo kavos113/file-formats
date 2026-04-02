@@ -1,3 +1,4 @@
+use crate::img::Image;
 use crate::render::d3d::D3DRenderer;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::UpdateWindow;
@@ -11,7 +12,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 use windows::core::{PCWSTR, w};
 
 pub trait Renderer {
-    fn new(hwnd: &HWND) -> Self
+    fn new(hwnd: &HWND, img: &Image) -> Self
     where
         Self: Sized;
 
@@ -26,7 +27,7 @@ pub struct Window {
 impl Window {
     const CLASS_NAME: PCWSTR = w!("my_window_class");
 
-    pub fn new(x: i32, y: i32, width: i32, height: i32) -> Self {
+    pub fn new(x: i32, y: i32, width: i32, height: i32, img: &Image) -> Self {
         unsafe {
             let instance = GetModuleHandleW(None).unwrap();
 
@@ -66,7 +67,7 @@ impl Window {
 
             Self {
                 hwnd,
-                renderer: Box::new(D3DRenderer::new(&hwnd)),
+                renderer: Box::new(D3DRenderer::new(&hwnd, img)),
             }
         }
     }
