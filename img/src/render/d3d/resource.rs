@@ -153,15 +153,16 @@ impl Commands {
     pub fn end_frame(&mut self, device: &ID3D12Device) {
         match unsafe { self.command_list.Close() } {
             Ok(_) => (),
-            Err(hr) => {
-                match unsafe { device.GetDeviceRemovedReason() } {
-                    Ok(reason) => panic!(
-                        "Failed to close command list: {:?}, device removed reason: {:?}",
-                        hr, reason
-                    ),
-                    Err(e) => panic!("Failed to close command list: {:?}, and also failed to get device removed reason: {:?}", hr, e),
-                }
-            }
+            Err(hr) => match unsafe { device.GetDeviceRemovedReason() } {
+                Ok(reason) => panic!(
+                    "Failed to close command list: {:?}, device removed reason: {:?}",
+                    hr, reason
+                ),
+                Err(e) => panic!(
+                    "Failed to close command list: {:?}, and also failed to get device removed reason: {:?}",
+                    hr, e
+                ),
+            },
         }
 
         let command_lists = [Some(self.command_list.clone().into())];

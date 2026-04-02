@@ -1,3 +1,4 @@
+use crate::render::d3d::debug::{Debug, enable_debug};
 use windows::Win32::Graphics::Direct3D::{
     D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_12_1,
 };
@@ -13,6 +14,7 @@ use windows::Win32::Graphics::Dxgi::{
 pub struct Device {
     pub dxgi_factory: IDXGIFactory7,
     pub device: ID3D12Device,
+    debug: Debug,
 }
 
 impl Device {
@@ -22,39 +24,15 @@ impl Device {
         let adapter = get_adapter(&dxgi_factory);
         let device = create_device(&adapter);
 
+        let mut debug = Debug::new();
+        debug.setup_callback(&device);
+
         Self {
             dxgi_factory,
             device,
+            debug,
         }
     }
-}
-
-fn enable_debug() {
-    let mut debug_controller: Option<ID3D12Debug1> = None;
-    match unsafe { D3D12GetDebugInterface(&mut debug_controller) } {
-        Ok(_) => (),
-        Err(hr) => {
-            if hr.code() == DXGI_ERROR_ACCESS_DENIED {
-                println!(
-                    "Warning: Failed to enable D3D12 debug layer: Access Denied. Make sure you have the necessary permissions."
-                );
-            } else {
-                println!("Warning: Failed to enable D3D12 debug layer: {:?}", hr);
-            }
-        }
-    }
-
-    let debug_controller = match debug_controller {
-        Some(controller) => controller,
-        None => return,
-    };
-
-    unsafe {
-        debug_controller.EnableDebugLayer();
-        debug_controller.SetEnableGPUBasedValidation(true);
-    }
-
-    println!("D3D12 debug layer enabled");
 }
 
 fn create_factory() -> IDXGIFactory7 {
