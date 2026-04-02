@@ -11,7 +11,7 @@ struct Vertex {
     color: [f32; 4],
 }
 
-struct VertexResource {
+pub struct VertexResource {
     vertex_buffer: ID3D12Resource,
     vertex_buffer_view: D3D12_VERTEX_BUFFER_VIEW,
 }
