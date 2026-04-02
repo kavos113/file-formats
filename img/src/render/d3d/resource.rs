@@ -1,4 +1,4 @@
-use crate::render::d3d::object::VertexResource;
+use crate::render::d3d::object::Object;
 use crate::render::d3d::pipeline::Pipeline;
 use windows::Win32::Foundation::{HANDLE, HWND, RECT};
 use windows::Win32::Graphics::Direct3D::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -25,7 +25,7 @@ use windows::core::Interface;
 pub struct Resources {
     commands: Commands,
     display: Display,
-    vertex_resource: VertexResource,
+    vertex_resource: Object,
     pipeline: Pipeline,
     view_port: D3D12_VIEWPORT,
     scissor_rect: RECT,
@@ -35,7 +35,7 @@ impl Resources {
     pub fn new(device: &ID3D12Device, factory: &IDXGIFactory7, hwnd: &HWND) -> Self {
         let commands = Commands::new(device);
         let display = Display::new(factory, device, hwnd, &commands.command_queue);
-        let vertex_resource = VertexResource::new(device);
+        let vertex_resource = Object::new(device);
         let pipeline = Pipeline::new(device);
 
         let mut rect = RECT::default();
