@@ -17,9 +17,9 @@ impl Image {
         let mut data = Vec::with_capacity((width * height) as usize);
         for y in 0..height {
             for x in 0..width {
-                let r = (x % 256) as u8;
-                let g = (y % 256) as u8;
-                let b = ((x + y) % 256) as u8;
+                let r = (x * 255 / width) as u8;
+                let g = (y * 255 / height) as u8;
+                let b = 128;
                 let a = 255;
                 data.push(Pixel { r, g, b, a });
             }

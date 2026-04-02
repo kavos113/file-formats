@@ -13,6 +13,7 @@ use windows::Win32::Graphics::Direct3D12::{
 };
 use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, DXGI_SAMPLE_DESC};
 
+#[repr(C)]
 struct Vertex {
     position: [f32; 3],
     uv: [f32; 2],
