@@ -80,7 +80,7 @@ impl Resources {
         }
 
         self.display.end_frame(command_list, frame_index);
-        self.commands.end_frame();
+        self.commands.end_frame(device);
         self.display.present();
     }
 
@@ -150,10 +150,18 @@ impl Commands {
         }
     }
 
-    pub fn end_frame(&mut self) {
+    pub fn end_frame(&mut self, device: &ID3D12Device) {
         match unsafe { self.command_list.Close() } {
             Ok(_) => (),
-            Err(hr) => panic!("Failed to close command list: {:?}", hr),
+            Err(hr) => {
+                match unsafe { device.GetDeviceRemovedReason() } {
+                    Ok(reason) => panic!(
+                        "Failed to close command list: {:?}, device removed reason: {:?}",
+                        hr, reason
+                    ),
+                    Err(e) => panic!("Failed to close command list: {:?}, and also failed to get device removed reason: {:?}", hr, e),
+                }
+            }
         }
 
         let command_lists = [Some(self.command_list.clone().into())];

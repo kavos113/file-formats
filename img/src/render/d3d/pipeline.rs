@@ -1,24 +1,14 @@
+use std::env;
+use std::os::windows::ffi::OsStrExt;
 use std::str::from_utf8;
 use windows::Win32::Foundation::{FALSE, TRUE};
 use windows::Win32::Graphics::Direct3D::Fxc::D3DCompileFromFile;
 use windows::Win32::Graphics::Direct3D::ID3DBlob;
-use windows::Win32::Graphics::Direct3D12::{
-    D3D_ROOT_SIGNATURE_VERSION_1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_BLEND_DESC, D3D12_BLEND_ONE,
-    D3D12_BLEND_OP_ADD, D3D12_BLEND_ZERO, D3D12_COLOR_WRITE_ENABLE_ALL,
-    D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF, D3D12_CULL_MODE_NONE, D3D12_DEFAULT_DEPTH_BIAS,
-    D3D12_DEFAULT_DEPTH_BIAS_CLAMP, D3D12_DEFAULT_SAMPLE_MASK,
-    D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, D3D12_DEPTH_STENCIL_DESC, D3D12_FILL_MODE_SOLID,
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-    D3D12_INPUT_ELEMENT_DESC, D3D12_INPUT_LAYOUT_DESC, D3D12_LOGIC_OP_NOOP,
-    D3D12_PIPELINE_STATE_FLAG_NONE, D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, D3D12_RASTERIZER_DESC,
-    D3D12_RENDER_TARGET_BLEND_DESC, D3D12_ROOT_SIGNATURE_DESC,
-    D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT, D3D12_SHADER_BYTECODE,
-    D3D12SerializeRootSignature, ID3D12Device, ID3D12GraphicsCommandList, ID3D12PipelineState,
-    ID3D12RootSignature,
-};
+use windows::Win32::Graphics::Direct3D12::{D3D_ROOT_SIGNATURE_VERSION_1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_BLEND_DESC, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD, D3D12_BLEND_ZERO, D3D12_COLOR_WRITE_ENABLE_ALL, D3D12_COMPARISON_FUNC_ALWAYS, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF, D3D12_CULL_MODE_NONE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP, D3D12_DEFAULT_SAMPLE_MASK, D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, D3D12_DEPTH_STENCIL_DESC, D3D12_DESCRIPTOR_RANGE, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND, D3D12_DESCRIPTOR_RANGE_TYPE_CBV, D3D12_FILL_MODE_SOLID, D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_FLOAT32_MAX, D3D12_GRAPHICS_PIPELINE_STATE_DESC, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, D3D12_INPUT_ELEMENT_DESC, D3D12_INPUT_LAYOUT_DESC, D3D12_LOGIC_OP_NOOP, D3D12_PIPELINE_STATE_FLAG_NONE, D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, D3D12_RASTERIZER_DESC, D3D12_RENDER_TARGET_BLEND_DESC, D3D12_ROOT_DESCRIPTOR_TABLE, D3D12_ROOT_PARAMETER, D3D12_ROOT_PARAMETER_0, D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, D3D12_ROOT_SIGNATURE_DESC, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT, D3D12_SHADER_BYTECODE, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK, D3D12_STATIC_SAMPLER_DESC, D3D12_TEXTURE_ADDRESS_MODE_WRAP, D3D12SerializeRootSignature, ID3D12Device, ID3D12GraphicsCommandList, ID3D12PipelineState, ID3D12RootSignature, D3D12_DESCRIPTOR_RANGE_TYPE_SRV};
 use windows::Win32::Graphics::Dxgi::Common::{
-    DXGI_FORMAT_D32_FLOAT, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32B32_FLOAT,
-    DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_UNKNOWN, DXGI_SAMPLE_DESC,
+    DXGI_FORMAT_D32_FLOAT, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R32G32_FLOAT,
+    DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_UNKNOWN,
+    DXGI_SAMPLE_DESC,
 };
 use windows::core::{PCSTR, PCWSTR, s, w};
 
@@ -29,17 +19,60 @@ pub struct Pipeline {
 
 impl Pipeline {
     pub fn new(device: &ID3D12Device) -> Self {
-        let ps = compile_shader(w!("shader.hlsl"), s!("ps_main"), s!("ps_5_0"), 0);
-        let vs = compile_shader(w!("shader.hlsl"), s!("vs_main"), s!("vs_5_0"), 0);
+        let exe_path = env::current_exe().unwrap();
+        let exe_dir = exe_path.parent().unwrap();
+        let shader_path = exe_dir.join("shader.hlsl");
+
+        let wide_shader_path: Vec<u16> = shader_path
+            .as_os_str()
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        let shader_path_pcwstr = PCWSTR(wide_shader_path.as_ptr());
+
+        let ps = compile_shader(shader_path_pcwstr, s!("ps_main"), s!("ps_5_0"), 0);
+        let vs = compile_shader(shader_path_pcwstr, s!("vs_main"), s!("vs_5_0"), 0);
+
+        let descriptor_range = D3D12_DESCRIPTOR_RANGE {
+            RangeType: D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
+            NumDescriptors: 1,
+            BaseShaderRegister: 0,
+            RegisterSpace: 0,
+            OffsetInDescriptorsFromTableStart: D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND,
+        };
+        let root_parameter = D3D12_ROOT_PARAMETER {
+            ParameterType: D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
+            Anonymous: D3D12_ROOT_PARAMETER_0 {
+                DescriptorTable: D3D12_ROOT_DESCRIPTOR_TABLE {
+                    NumDescriptorRanges: 1,
+                    pDescriptorRanges: &descriptor_range,
+                },
+            },
+            ShaderVisibility: D3D12_SHADER_VISIBILITY_PIXEL,
+        };
+        let sampler = D3D12_STATIC_SAMPLER_DESC {
+            Filter: D3D12_FILTER_MIN_MAG_MIP_LINEAR,
+            AddressU: D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+            AddressV: D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+            AddressW: D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+            MipLODBias: 0.0,
+            MaxAnisotropy: 1,
+            ComparisonFunc: D3D12_COMPARISON_FUNC_ALWAYS,
+            BorderColor: D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK,
+            MinLOD: 0.0,
+            MaxLOD: D3D12_FLOAT32_MAX,
+            ShaderVisibility: D3D12_SHADER_VISIBILITY_PIXEL,
+            ..Default::default()
+        };
 
         let mut signature_blob: Option<ID3DBlob> = None;
         let mut error_blob: Option<ID3DBlob> = None;
 
         let signature_desc = D3D12_ROOT_SIGNATURE_DESC {
-            NumParameters: 0,
-            pParameters: std::ptr::null(),
-            NumStaticSamplers: 0,
-            pStaticSamplers: std::ptr::null(),
+            NumParameters: 1,
+            pParameters: &root_parameter,
+            NumStaticSamplers: 1,
+            pStaticSamplers: &sampler,
             Flags: D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
         };
         match unsafe {
@@ -99,9 +132,9 @@ impl Pipeline {
                 InstanceDataStepRate: 0,
             },
             D3D12_INPUT_ELEMENT_DESC {
-                SemanticName: s!("COLOR"),
+                SemanticName: s!("TEXCOORD"),
                 SemanticIndex: 0,
-                Format: DXGI_FORMAT_R32G32B32A32_FLOAT,
+                Format: DXGI_FORMAT_R32G32_FLOAT,
                 InputSlot: 0,
                 AlignedByteOffset: D3D12_APPEND_ALIGNED_ELEMENT,
                 InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,

@@ -2,6 +2,7 @@ mod device;
 mod object;
 mod pipeline;
 mod resource;
+mod debug;
 
 use crate::img::Image;
 use crate::render::d3d::device::Device;

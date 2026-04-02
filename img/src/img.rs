@@ -11,3 +11,23 @@ pub struct Pixel {
     pub b: u8,
     pub a: u8,
 }
+
+impl Image {
+    pub fn sample_image(width: u32, height: u32) -> Self {
+        let mut data = Vec::with_capacity((width * height) as usize);
+        for y in 0..height {
+            for x in 0..width {
+                let r = (x % 256) as u8;
+                let g = (y % 256) as u8;
+                let b = ((x + y) % 256) as u8;
+                let a = 255;
+                data.push(Pixel { r, g, b, a });
+            }
+        }
+        Self {
+            width,
+            height,
+            data,
+        }
+    }
+}

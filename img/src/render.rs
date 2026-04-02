@@ -1,2 +1,2 @@
 mod d3d;
-mod renderer;
+pub mod renderer;
