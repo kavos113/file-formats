@@ -153,7 +153,7 @@ struct CentralDirectoryHeader {
     version_made_by: u16,
     version_needed: u16,
     general_purpose_flag: u16,
-    compression_method: u16,
+    compression_method: CompressionMethod,
     last_mod_time: u16,
     last_mod_date: u16,
     crc32: u32,
@@ -208,7 +208,7 @@ impl CentralDirectoryHeader {
             version_made_by,
             version_needed,
             general_purpose_flag,
-            compression_method,
+            compression_method: CompressionMethod::from_u16(compression_method),
             last_mod_time,
             last_mod_date,
             crc32,
@@ -232,8 +232,8 @@ impl Display for CentralDirectoryHeader {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "---------- Central Directory Header ----------")?;
         writeln!(f, "Signature:                0x{:08x}", self.signature)?;
-        writeln!(f, "Version Made By:          {}", self.version_made_by)?;
-        writeln!(f, "Version Needed:           {}", self.version_needed)?;
+        writeln!(f, "Version Made By:          {}", format_version_made_by(self.version_made_by))?;
+        writeln!(f, "Version Needed:           {}", format_version_needed(self.version_needed))?;
         writeln!(f, "General Purpose Flag:     0b{:016b}", self.general_purpose_flag)?;
         writeln!(f, "Compression Method:       {}", self.compression_method)?;
         writeln!(f, "Last Mod Time:            0x{:04x}", self.last_mod_time)?;
@@ -253,6 +253,133 @@ impl Display for CentralDirectoryHeader {
         writeln!(f, "File Comment: \n  {}\n", self.file_comment)?;
 
         Ok(())
+    }
+}
+
+fn format_version_made_by(version: u16) -> String {
+    let os = version >> 8;
+    let ver = version & 0x00ff;
+
+    let os_str = match os {
+        0 => "MS-DOS and OS/2 (FAT)",
+        1 => "Amiga",
+        2 => "OpenVMS",
+        3 => "Unix",
+        4 => "VM/CMS",
+        5 => "Atari ST",
+        6 => "OS/2 H.P.F.S.",
+        7 => "Macintosh",
+        8 => "Z-System",
+        9 => "CP/M",
+        10 => "Windows NTFS",
+        11 => "MVS (OS/390 - Z/OS)",
+        12 => "VSE",
+        13 => "Acorn Risc",
+        14 => "VFAT",
+        15 => "Alternate MVS",
+        16 => "BeOS",
+        17 => "Tandem",
+        18 => "OS/400",
+        19 => "OS X (Darwin)",
+        _ => "Unknown"
+    };
+
+    let major = ver / 10;
+    let minor = ver % 10;
+
+    format!("{}.{} {}", major, minor, os_str)
+}
+
+fn format_version_needed(version: u16) -> String {
+    let major = version / 10;
+    let minor = version % 10;
+
+    format!("{}.{}", major, minor)
+}
+
+enum CompressionMethod {
+    Stored = 0,
+    Shrunk = 1,
+    Reduced1 = 2,
+    Reduced2 = 3,
+    Reduced3 = 4,
+    Reduced4 = 5,
+    Imploded = 6,
+    Deflated = 8,
+    Deflate64 = 9,
+    PKWareImploded = 10,
+    BZIP2 = 12,
+    LZMA = 14,
+    IBMCMPSC = 16,
+    IBMTERSE = 18,
+    IBMLZ77 = 19,
+    Zstd = 93,
+    MP3 = 94,
+    XZ = 95,
+    JPEG = 96,
+    WavPack = 97,
+    PPMd = 98,
+    AEX = 99
+}
+
+impl CompressionMethod {
+    fn from_u16(value: u16) -> Self {
+        match value {
+            0 => CompressionMethod::Stored,
+            1 => CompressionMethod::Shrunk,
+            2 => CompressionMethod::Reduced1,
+            3 => CompressionMethod::Reduced2,
+            4 => CompressionMethod::Reduced3,
+            5 => CompressionMethod::Reduced4,
+            6 => CompressionMethod::Imploded,
+            8 => CompressionMethod::Deflated,
+            9 => CompressionMethod::Deflate64,
+            10 => CompressionMethod::PKWareImploded,
+            12 => CompressionMethod::BZIP2,
+            14 => CompressionMethod::LZMA,
+            16 => CompressionMethod::IBMCMPSC,
+            18 => CompressionMethod::IBMTERSE,
+            19 => CompressionMethod::IBMLZ77,
+            93 => CompressionMethod::Zstd,
+            94 => CompressionMethod::MP3,
+            95 => CompressionMethod::XZ,
+            96 => CompressionMethod::JPEG,
+            97 => CompressionMethod::WavPack,
+            98 => CompressionMethod::PPMd,
+            99 => CompressionMethod::AEX,
+            _ => panic!("Unknown compression method: {}", value)
+        }
+    }
+}
+
+impl Display for CompressionMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let method_str = match self {
+            CompressionMethod::Stored => "Stored (no compression)",
+            CompressionMethod::Shrunk => "Shrunk",
+            CompressionMethod::Reduced1 => "Reduced with compression factor 1",
+            CompressionMethod::Reduced2 => "Reduced with compression factor 2",
+            CompressionMethod::Reduced3 => "Reduced with compression factor 3",
+            CompressionMethod::Reduced4 => "Reduced with compression factor 4",
+            CompressionMethod::Imploded => "Imploded",
+            CompressionMethod::Deflated => "Deflated",
+            CompressionMethod::Deflate64 => "Deflate64",
+            CompressionMethod::PKWareImploded => "PKWare Data Compression Library Imploding",
+            CompressionMethod::BZIP2 => "BZIP2",
+            CompressionMethod::LZMA => "LZMA",
+            CompressionMethod::IBMCMPSC => "IBM z/OS CMPSC",
+            CompressionMethod::IBMTERSE => "IBM TERSE (new)",
+            CompressionMethod::IBMLZ77 => "IBM LZ77 z Architecture (PFS)",
+            CompressionMethod::Zstd => "Zstandard (zstd)",
+            CompressionMethod::MP3 => "MP3",
+            CompressionMethod::XZ => "XZ",
+            CompressionMethod::JPEG => "JPEG",
+            CompressionMethod::WavPack => "WavPack compressed data",
+            CompressionMethod::PPMd => "PPMd version I, Rev 1",
+            CompressionMethod::AEX => "AE-x encryption marker"
+        };
+
+        write!(f, "{}", method_str)
     }
 }
 
