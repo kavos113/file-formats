@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::fs;
-use crate::img::Image;
+use crate::img::{Image, Pixel};
 use crate::reader::Reader;
 
 pub fn load_bmp(path: &str) -> Image {
@@ -13,10 +13,62 @@ pub fn load_bmp(path: &str) -> Image {
     println!("{}", file_header);
     println!("{}", info_header);
 
+    let pixels = match info_header.bi_compression {
+        Compression::BI_RGB => {
+            match info_header.bi_bit_count {
+                1 | 4 | 8 => {
+                    read_palette_pixels(
+                        &mut reader,
+                        file_header.bf_off_bits,
+                        info_header.bi_width,
+                        info_header.bi_height,
+                        info_header.bi_bit_count,
+                        info_header.bi_clr_used,
+                    )
+                }
+                24 => {
+                    read_plain_pixels(
+                        &mut reader,
+                        ((info_header.bi_width as u32 * 3 + 3) & !3), // Row stride (padded to 4 bytes)
+                        info_header.bi_width,
+                        info_header.bi_height,
+                    )
+                }
+                _ => {
+                    println!("Unsupported bit count for BI_RGB: {}", info_header.bi_bit_count);
+                    panic!("Cannot load BMP with unsupported bit count");
+                }
+            }
+        }
+
+        Compression::BI_BITFIELDS => {
+            match info_header.bi_bit_count {
+                16 | 32 => {
+                    read_bitfield_pixels(
+                        &mut reader,
+                        file_header.bf_off_bits,
+                        info_header.bi_width,
+                        info_header.bi_height,
+                        info_header.bi_bit_count,
+                    )
+                }
+                _ => {
+                    println!("Unsupported bit count for BI_BITFIELDS: {}", info_header.bi_bit_count);
+                    panic!("Cannot load BMP with unsupported bit count for BI_BITFIELDS");
+                }
+            }
+        }
+
+        _ => {
+            println!("Unsupported compression type: {}", info_header.bi_compression);
+            panic!("Cannot load BMP with unsupported compression");
+        }
+    };
+
     Image {
         width: info_header.bi_width as u32,
         height: info_header.bi_height as u32,
-        data: vec![]
+        data: pixels,
     }
 }
 
@@ -160,4 +212,120 @@ struct RGBQuad {
     rgb_green: u8,
     rgb_red: u8,
     rgb_reserved: u8,
+}
+
+// BI_RGB, 24bpp
+fn read_plain_pixels(reader: &mut Reader, stride: u32, width: i32, height: i32) -> Vec<Pixel> {
+    let mut pixels = Vec::with_capacity((width * height) as usize);
+
+    for _y in 0..height {
+        let row_bytes = reader.read_bytes(stride as usize);
+        for x in 0..width {
+            let offset = (x * 3) as usize;
+            let b = row_bytes[offset];
+            let g = row_bytes[offset + 1];
+            let r = row_bytes[offset + 2];
+            let pixel = Pixel { r, g, b, a: 255 };
+            pixels.push(pixel);
+        }
+    }
+
+    pixels
+}
+
+// BI_RGB, 1/4/8bpp with palette
+fn read_palette_pixels(reader: &mut Reader, off_bits: u32, width: i32, height: i32, bit_count: u16, color_used: u32) -> Vec<Pixel> {
+    let palette_size = if color_used > 0 {
+        color_used
+    } else {
+        1 << bit_count
+    };
+    let mut palette = Vec::with_capacity(palette_size as usize);
+    for _ in 0..palette_size {
+        let rgb_quad = RGBQuad {
+            rgb_blue: reader.read_u8(),
+            rgb_green: reader.read_u8(),
+            rgb_red: reader.read_u8(),
+            rgb_reserved: reader.read_u8(),
+        };
+        palette.push(rgb_quad);
+    }
+
+    reader.seek(off_bits as usize);
+
+    let mut pixels = Vec::with_capacity((width * height) as usize);
+    let stride = ((width * bit_count as i32 + 31) & !31) >> 3;
+
+    for _y in 0..height {
+        let row_bytes = reader.read_bytes(stride as usize);
+        for x in 0..width {
+            let pixel_index = match bit_count {
+                1 => (row_bytes[(x / 8) as usize] >> (7 - (x % 8))) & 0x01,
+                4 => (row_bytes[(x / 2) as usize] >> (4 - ((x % 2) * 4))) & 0x0F,
+                8 => row_bytes[x as usize],
+                _ => panic!("Unsupported bit count: {}", bit_count),
+            };
+            let rgb_quad = &palette[pixel_index as usize];
+            let pixel = Pixel {
+                r: rgb_quad.rgb_red,
+                g: rgb_quad.rgb_green,
+                b: rgb_quad.rgb_blue,
+                a: 255,
+            };
+            pixels.push(pixel);
+        }
+    }
+
+    pixels
+}
+
+// BI_BITFIELDS, 16/32bpp with bit masks
+fn read_bitfield_pixels(reader: &mut Reader, off_bits: u32, width: i32, height: i32, bit_count: u16) -> Vec<Pixel> {
+    let red_mask = reader.read_u32();
+    let green_mask = reader.read_u32();
+    let blue_mask = reader.read_u32();
+
+    let get_info = |mask: u32| {
+        let shift = mask.trailing_zeros();
+        let max = mask >> shift;
+        (shift, max)
+    };
+    let (red_shift, red_max) = get_info(red_mask);
+    let (green_shift, green_max) = get_info(green_mask);
+    let (blue_shift, blue_max) = get_info(blue_mask);
+
+    reader.seek(off_bits as usize);
+
+    let mut pixels = Vec::with_capacity((width * height) as usize);
+    let stride = ((width * bit_count as i32 + 31) & !31) >> 3;
+
+    for _y in 0..height {
+        let mut read = 0;
+        for _x in 0..width {
+            let pixel_value = if bit_count == 16 {
+                read += 2;
+                reader.read_u16() as u32
+            } else {
+                read += 4;
+                reader.read_u32()
+            };
+            let r = (pixel_value & red_mask) >> red_shift;
+            let g = (pixel_value & green_mask) >> green_shift;
+            let b = (pixel_value & blue_mask) >> blue_shift;
+            let pixel = Pixel {
+                r: ((r * 255) / red_max) as u8,
+                g: ((g * 255) / green_max) as u8,
+                b: ((b * 255) / blue_max) as u8,
+                a: 255,
+            };
+            pixels.push(pixel);
+        }
+
+        let padding = (stride as usize).saturating_sub(read);
+        if padding > 0 {
+            reader.read_bytes(padding);
+        }
+    }
+
+    pixels
 }

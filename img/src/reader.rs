@@ -52,4 +52,11 @@ impl<'a> Reader<'a> {
 
         buf
     }
+
+    pub fn seek(&mut self, offset: usize) {
+        if offset > self.full_data.len() {
+            panic!("Seek offset {} is out of bounds", offset);
+        }
+        self.current = &self.full_data[offset..];
+    }
 }

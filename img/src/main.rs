@@ -1,4 +1,5 @@
 use std::env;
+use crate::render::renderer::Window;
 
 pub mod fmt;
 pub mod img;
@@ -12,9 +13,7 @@ fn main() {
         return;
     }
 
-    let _ = fmt::load_image(&args[1]);
-
-    // let img = Image::sample_image(800, 600);
-    // let mut window = Window::new(100, 100, 800, 600, &img);
-    // window.run();
+    let img = fmt::load_image(&args[1]);
+    let mut window = Window::new(100, 100, img.width as i32, img.height as i32, &img);
+    window.run();
 }
