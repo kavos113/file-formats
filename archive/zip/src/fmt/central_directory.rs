@@ -2,6 +2,7 @@ use std::cmp::min;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
+use chrono::{DateTime, Duration, Utc};
 use crate::reader::Reader;
 
 pub struct EndOfCentralDirectoryRecord {
@@ -167,7 +168,7 @@ struct CentralDirectoryHeader {
     external_file_attributes: u32,
     local_header_offset: u32,
     file_name: String,
-    extra_field: Vec<u8>,
+    extra_field: Vec<ExtraField>,
     file_comment: String
 }
 
@@ -198,7 +199,12 @@ impl CentralDirectoryHeader {
         let file_name_bytes = reader.read_bytes(file_name_length as usize);
         let file_name = String::from_utf8_lossy(file_name_bytes).to_string();
 
-        let extra_field = reader.read_bytes(extra_field_length as usize).to_vec();
+        let extra_field_bytes = reader.read_bytes(extra_field_length as usize);
+        let mut extra_field_reader = Reader::new(extra_field_bytes);
+        let mut extra_field = Vec::with_capacity((extra_field_length / 4) as usize);
+        while extra_field_reader.read_bytes < extra_field_length as usize {
+            extra_field.push(ExtraField::read_from(&mut extra_field_reader));
+        }
 
         let file_comment_bytes = reader.read_bytes(file_comment_length as usize);
         let file_comment = String::from_utf8_lossy(file_comment_bytes).to_string();
@@ -236,8 +242,7 @@ impl Display for CentralDirectoryHeader {
         writeln!(f, "Version Needed:           {}", format_version_needed(self.version_needed))?;
         writeln!(f, "General Purpose Flag:     0b{:016b}", self.general_purpose_flag)?;
         writeln!(f, "Compression Method:       {}", self.compression_method)?;
-        writeln!(f, "Last Mod Time:            0x{:04x}", self.last_mod_time)?;
-        writeln!(f, "Last Mod Date:            0x{:04x}", self.last_mod_date)?;
+        writeln!(f, "Last Modified             {} {}", format_date(self.last_mod_date), format_time(self.last_mod_time))?;
         writeln!(f, "CRC-32:                   0x{:08x}", self.crc32)?;
         writeln!(f, "Compressed Size:          {}", self.compressed_size)?;
         writeln!(f, "Uncompressed Size:        {}", self.uncompressed_size)?;
@@ -246,10 +251,10 @@ impl Display for CentralDirectoryHeader {
         writeln!(f, "File Comment Length:      {}", self.file_comment_length)?;
         writeln!(f, "Disk Number Start:        {}", self.disk_number_start)?;
         writeln!(f, "Internal File Attributes: 0b{:016b}", self.internal_file_attributes)?;
-        writeln!(f, "External File Attributes: 0x{:08x}", self.external_file_attributes)?;
+        writeln!(f, "External File Attributes: {}", format_external_attributes(self.external_file_attributes, self.version_made_by))?;
         writeln!(f, "Local Header Offset:      {}", self.local_header_offset)?;
         writeln!(f, "File Name: \n  {}", self.file_name)?;
-        writeln!(f, "Extra Field (hex): \n  {:02x?}", self.extra_field)?;
+        self.extra_field.iter().try_for_each(|field| writeln!(f, "{}", field))?;
         writeln!(f, "File Comment: \n  {}\n", self.file_comment)?;
 
         Ok(())
@@ -295,6 +300,48 @@ fn format_version_needed(version: u16) -> String {
     let minor = version % 10;
 
     format!("{}.{}", major, minor)
+}
+
+fn format_time(time: u16) -> String {
+    let hours = time >> 11;
+    let minutes = (time >> 5) & 0x3f;
+    let seconds = (time & 0x1f) * 2;
+
+    format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+}
+
+fn format_date(date: u16) -> String {
+    let year = ((date >> 9) & 0x7f) + 1980;
+    let month = (date >> 5) & 0x0f;
+    let day = date & 0x1f;
+
+    format!("{:04}-{:02}-{:02}", year, month, day)
+}
+
+fn format_external_attributes(attrs: u32, made_by: u16) -> String {
+    let os = made_by >> 8;
+    match os {
+        0 => {
+            let read_only = (attrs & 0x01) != 0;
+            let hidden = (attrs & 0x02) != 0;
+            let system = (attrs & 0x04) != 0;
+            let volume_label = (attrs & 0x08) != 0;
+            let directory = (attrs & 0x10) != 0;
+            let archive = (attrs & 0x20) != 0;
+
+            format!(
+                "MS-DOS Attributes: {}{}{}{}{}{}",
+                if read_only { "Read-Only " } else { "" },
+                if hidden { "Hidden " } else { "" },
+                if system { "System " } else { "" },
+                if volume_label { "Volume Label " } else { "" },
+                if directory { "Directory " } else { "" },
+                if archive { "Archive" } else { "" }
+            )
+        }
+        3 => format!("Unix Permissions: 0o{:o}", (attrs >> 16) & 0xffff),
+        _ => format!("External Attributes: 0x{:08x}", attrs)
+    }
 }
 
 enum CompressionMethod {
@@ -404,5 +451,229 @@ impl CentralDirectoryDigitalSignature {
             size_of_data,
             data
         }
+    }
+}
+
+enum ExtraField {
+    Zip64(ExtraFieldZip64),
+    OS2(ExtraFieldOS2),
+    NTFS(ExtraFieldNTFS)
+}
+
+impl ExtraField {
+    fn read_from(reader: &mut Reader) -> Self {
+        let header_id = reader.read_u16();
+        reader.seek_from_current(-2);
+        match header_id {
+            0x0001 => ExtraField::Zip64(ExtraFieldZip64::read_from(reader)),
+            0x000d => ExtraField::OS2(ExtraFieldOS2::read_from(reader)),
+            0x000a => ExtraField::NTFS(ExtraFieldNTFS::read_from(reader)),
+            _ => panic!("Unknown extra field header ID: 0x{:04x}", header_id)
+        }
+    }
+}
+
+impl Display for ExtraField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ExtraField::Zip64(zip64) => write!(f, "{}", zip64)?,
+            ExtraField::OS2(os2) => write!(f, "{}", os2)?,
+            ExtraField::NTFS(ntfs) => write!(f, "{}", ntfs)?
+        }
+
+        Ok(())
+    }
+}
+
+struct ExtraFieldZip64 {
+    header_id: u16,
+    data_size: u16,
+    original_size: u64,
+    compressed_size: u64,
+    local_header_offset: u64,
+    disk_start_number: u32
+}
+
+impl ExtraFieldZip64 {
+    fn read_from(reader: &mut Reader) -> Self {
+        let header_id = reader.read_u16();
+        if header_id != 0x0001 {
+            panic!("Invalid Zip64 extra field header ID: 0x{:04x}", header_id);
+        }
+
+        let data_size = reader.read_u16();
+        if data_size != 28 {
+            panic!("Invalid Zip64 extra field data size: {}", data_size);
+        }
+
+        let original_size = reader.read_u64();
+        let compressed_size = reader.read_u64();
+        let local_header_offset = reader.read_u64();
+        let disk_start_number = reader.read_u32();
+
+        Self {
+            header_id,
+            data_size,
+            original_size,
+            compressed_size,
+            local_header_offset,
+            disk_start_number
+        }
+    }
+}
+
+impl Display for ExtraFieldZip64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "---------- Zip64 Extended Information Extra Field ----------")?;
+        writeln!(f, "Header ID:              0x{:04x}", self.header_id)?;
+        writeln!(f, "Data Size:              {}", self.data_size)?;
+        writeln!(f, "Original Size:          {}", self.original_size)?;
+        writeln!(f, "Compressed Size:        {}", self.compressed_size)?;
+        writeln!(f, "Local Header Offset:    {}", self.local_header_offset)?;
+        writeln!(f, "Disk Start Number:      {}", self.disk_start_number)?;
+
+        Ok(())
+    }
+}
+
+struct ExtraFieldOS2 {
+    header_id: u16,
+    data_size: u16,
+    block_size: u16,
+    compression_type: u16,
+    ea_crc: u32,
+    block: Vec<u8>
+}
+
+impl ExtraFieldOS2 {
+    fn read_from(reader: &mut Reader) -> Self {
+        let header_id = reader.read_u16();
+        if header_id != 0x000d {
+            panic!("Invalid OS/2 extra field header ID: 0x{:04x}", header_id);
+        }
+
+        let data_size = reader.read_u16();
+        if data_size < 14 {
+            panic!("Invalid OS/2 extra field data size: {}", data_size);
+        }
+
+        let block_size = reader.read_u16();
+        let compression_type = reader.read_u16();
+        let ea_crc = reader.read_u32();
+        let block = reader.read_bytes((data_size - 14) as usize).to_vec();
+
+        Self {
+            header_id,
+            data_size,
+            block_size,
+            compression_type,
+            ea_crc,
+            block
+        }
+    }
+}
+
+impl Display for ExtraFieldOS2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "---------- OS/2 Extra Field ----------")?;
+        writeln!(f, "Header ID:              0x{:04x}", self.header_id)?;
+        writeln!(f, "Data Size:              {}", self.data_size)?;
+        writeln!(f, "Block Size:             {}", self.block_size)?;
+        writeln!(f, "Compression Type:       0x{:04x}", self.compression_type)?;
+        writeln!(f, "EA CRC-32:             0x{:08x}", self.ea_crc)?;
+        writeln!(f, "Block Data (hex): \n  {:02x?}", self.block)?;
+
+        Ok(())
+    }
+}
+
+struct ExtraFieldNTFS {
+    header_id: u16,
+    data_size: u16,
+    attribute_block: Vec<ExtraFieldNTFSAttributeBlock>
+}
+
+impl ExtraFieldNTFS {
+    fn read_from(reader: &mut Reader) -> Self {
+        let header_id = reader.read_u16();
+        if header_id != 0x000a {
+            panic!("Invalid NTFS extra field header ID: 0x{:04x}", header_id);
+        }
+
+        let data_size = reader.read_u16() - 4;
+        if data_size % 24 != 4 {
+            panic!("Invalid NTFS extra field data size: {}", data_size);
+        }
+
+        reader.read_u32(); // reserved
+
+        let mut attribute_block = Vec::with_capacity((data_size / 24) as usize);
+        for _ in 0..(data_size / 24) {
+            attribute_block.push(ExtraFieldNTFSAttributeBlock::read_from(reader));
+        }
+
+        Self {
+            header_id,
+            data_size,
+            attribute_block
+        }
+    }
+}
+
+struct ExtraFieldNTFSAttributeBlock {
+    tag: u16,
+    size: u16,
+    mod_time: u64,
+    access_time: u64,
+    create_time: u64
+}
+
+impl ExtraFieldNTFSAttributeBlock {
+    fn read_from(reader: &mut Reader) -> Self {
+        let tag = reader.read_u16();
+        let size = reader.read_u16();
+        if size != 24 {
+            panic!("Invalid NTFS attribute block size: {}", size);
+        }
+
+        let mod_time = reader.read_u64();
+        let access_time = reader.read_u64();
+        let create_time = reader.read_u64();
+
+        Self {
+            tag,
+            size,
+            mod_time,
+            access_time,
+            create_time
+        }
+    }
+}
+
+fn format_ntfs_time(ntfs_time: u64) -> String {
+    if ntfs_time == 0 {
+        return "N/A".to_string();
+    }
+    let unix_time = (ntfs_time / 10_000_000) - 11644473600;
+    let datetime = std::time::Duration::from_secs(unix_time);
+    let datetime: DateTime<Utc> = DateTime::from(std::time::UNIX_EPOCH + datetime);
+    datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+}
+
+impl Display for ExtraFieldNTFS {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "---------- NTFS Extra Field ----------")?;
+        writeln!(f, "Header ID:              0x{:04x}", self.header_id)?;
+        writeln!(f, "Data Size:              {}", self.data_size)?;
+        for (i, block) in self.attribute_block.iter().enumerate() {
+            writeln!(f, "Attribute Block {}:", i + 1)?;
+            writeln!(f, "  Tag:                 0x{:04x}", block.tag)?;
+            writeln!(f, "  Size:                {}", block.size)?;
+            writeln!(f, "  Last Modified Time:  {}", format_ntfs_time(block.mod_time))?;
+            writeln!(f, "  Last Access Time:    {}", format_ntfs_time(block.access_time))?;
+            writeln!(f, "  Creation Time:       {}", format_ntfs_time(block.create_time))?;
+        }
+
+        Ok(())
     }
 }
