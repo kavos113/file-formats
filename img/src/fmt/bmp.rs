@@ -52,9 +52,9 @@ impl BitmapFileHeader {
 
 impl Display for BitmapFileHeader {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "-------- Bitmap File Header --------\n")?;
-        write!(f, "Type:                 0x{:X}\n", self.bf_type)?;
-        write!(f, "Size:                 {}\n", self.bf_size)?;
+        writeln!(f, "-------- Bitmap File Header --------")?;
+        writeln!(f, "Type:                 0x{:X}", self.bf_type)?;
+        writeln!(f, "Size:                 {}", self.bf_size)?;
         write!(f, "Offset to Pixel Data: {}\n\n", self.bf_off_bits)
     }
 }
@@ -126,17 +126,17 @@ impl BitmapInfoHeader {
 
 impl Display for BitmapInfoHeader {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "-------- Bitmap Info Header --------\n")?;
-        write!(f, "Size:                {}\n", self.bi_size)?;
-        write!(f, "Width:               {}\n", self.bi_width)?;
-        write!(f, "Height:              {}\n", self.bi_height)?;
-        write!(f, "Planes:              {}\n", self.bi_planes)?;
-        write!(f, "Bit Count:           {}\n", self.bi_bit_count)?;
-        write!(f, "Compression:         {}\n", self.bi_compression)?;
-        write!(f, "Image Size:          {}\n", self.bi_size_image)?;
-        write!(f, "X Pixels per Meter:  {}\n", self.bi_x_pels_per_meter)?;
-        write!(f, "Y Pixels per Meter:  {}\n", self.bi_y_pels_per_meter)?;
-        write!(f, "Colors Used:         {}\n", self.bi_clr_used)?;
+        writeln!(f, "-------- Bitmap Info Header --------")?;
+        writeln!(f, "Size:                {}", self.bi_size)?;
+        writeln!(f, "Width:               {}", self.bi_width)?;
+        writeln!(f, "Height:              {}", self.bi_height)?;
+        writeln!(f, "Planes:              {}", self.bi_planes)?;
+        writeln!(f, "Bit Count:           {}", self.bi_bit_count)?;
+        writeln!(f, "Compression:         {}", self.bi_compression)?;
+        writeln!(f, "Image Size:          {}", self.bi_size_image)?;
+        writeln!(f, "X Pixels per Meter:  {}", self.bi_x_pels_per_meter)?;
+        writeln!(f, "Y Pixels per Meter:  {}", self.bi_y_pels_per_meter)?;
+        writeln!(f, "Colors Used:         {}", self.bi_clr_used)?;
         write!(f, "Important Colors:    {}\n\n", self.bi_clr_important)
     }
 }
