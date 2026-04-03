@@ -3,7 +3,7 @@ use windows::Win32::Graphics::Direct3D::{
     D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_12_1,
 };
 use windows::Win32::Graphics::Direct3D12::{
-    D3D12CreateDevice, D3D12GetDebugInterface, ID3D12Debug1, ID3D12Device,
+    D3D12CreateDevice, ID3D12Device,
 };
 use windows::Win32::Graphics::Dxgi::{
     CreateDXGIFactory2, DXGI_ADAPTER_DESC1, DXGI_ADAPTER_FLAG, DXGI_ADAPTER_FLAG_NONE,

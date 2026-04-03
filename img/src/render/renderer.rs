@@ -74,8 +74,8 @@ impl Window {
 
     pub fn run(&mut self) {
         unsafe {
-            ShowWindow(self.hwnd, SW_SHOW);
-            UpdateWindow(self.hwnd);
+            _ = ShowWindow(self.hwnd, SW_SHOW);
+            _ = UpdateWindow(self.hwnd);
 
             let mut msg = MSG::default();
             loop {
@@ -85,8 +85,8 @@ impl Window {
                 } else if ret.0 == 0 {
                     break;
                 } else {
-                    TranslateMessage(&msg);
-                    DispatchMessageW(&msg);
+                    _ = TranslateMessage(&msg);
+                    _ = DispatchMessageW(&msg);
                 }
 
                 self.renderer.render();

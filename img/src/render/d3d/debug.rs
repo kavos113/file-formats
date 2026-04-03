@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::ffi::CStr;
-use std::hash::Hash;
 use std::sync::OnceLock;
 use windows::Win32::Graphics::Direct3D12::{
     D3D12_MESSAGE_CALLBACK_FLAG_NONE, D3D12_MESSAGE_CATEGORY,
@@ -12,7 +11,7 @@ use windows::Win32::Graphics::Direct3D12::{
     D3D12_MESSAGE_CATEGORY_STATE_SETTING, D3D12_MESSAGE_ID, D3D12_MESSAGE_SEVERITY,
     D3D12_MESSAGE_SEVERITY_CORRUPTION, D3D12_MESSAGE_SEVERITY_ERROR, D3D12_MESSAGE_SEVERITY_INFO,
     D3D12_MESSAGE_SEVERITY_MESSAGE, D3D12_MESSAGE_SEVERITY_WARNING, D3D12GetDebugInterface,
-    ID3D12Debug1, ID3D12Device, ID3D12InfoQueue, ID3D12InfoQueue1,
+    ID3D12Debug1, ID3D12Device, ID3D12InfoQueue1,
 };
 use windows::Win32::Graphics::Dxgi::DXGI_ERROR_ACCESS_DENIED;
 use windows::core::{Interface, PCSTR};
@@ -70,7 +69,7 @@ impl Debug {
         message_id: D3D12_MESSAGE_ID,
         description: PCSTR,
         context: *mut std::ffi::c_void,
-    ) {
+    ) { unsafe {
         let category_str = Self::category_map()
             .get(&category.0)
             .unwrap_or(&"Unknown Category");
@@ -82,7 +81,7 @@ impl Debug {
             .into_owned();
 
         println!("{} ({}): {}", severity_str, category_str, description_str);
-    }
+    }}
 
     pub fn setup_callback(&mut self, device: &ID3D12Device) {
         let info_queue: ID3D12InfoQueue1 = device

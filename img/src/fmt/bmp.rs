@@ -23,8 +23,6 @@ pub fn load_bmp(path: &str) -> Image {
 struct BitmapFileHeader {
     bf_type: u16,
     bf_size: u32,
-    bf_reserved1: u16,
-    bf_reserved2: u16,
     bf_off_bits: u32,
 }
 
@@ -47,8 +45,6 @@ impl BitmapFileHeader {
         BitmapFileHeader {
             bf_type,
             bf_size,
-            bf_reserved1,
-            bf_reserved2,
             bf_off_bits,
         }
     }

@@ -41,7 +41,7 @@ impl Resources {
 
         let mut rect = RECT::default();
         unsafe {
-            GetClientRect(*hwnd, &mut rect);
+            _ = GetClientRect(*hwnd, &mut rect);
         }
         let view_port = D3D12_VIEWPORT {
             TopLeftX: 0.0,
@@ -190,7 +190,7 @@ impl Display {
     ) -> Self {
         let mut rect = RECT::default();
         unsafe {
-            GetClientRect(*hwnd, &mut rect);
+            _ = GetClientRect(*hwnd, &mut rect);
         }
 
         let swap_chain_desc = DXGI_SWAP_CHAIN_DESC1 {
