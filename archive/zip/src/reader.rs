@@ -79,6 +79,13 @@ impl<'a> Reader<'a> {
         buf
     }
 
+    pub fn peek_bytes(&self, n: usize) -> &'a [u8] {
+        if n > self.current.len() {
+            panic!("Peek length {} is out of bounds", n);
+        }
+        &self.current[..n]
+    }
+
     pub fn seek(&mut self, offset: usize) {
         if offset > self.full_data.len() {
             panic!("Seek offset {} is out of bounds", offset);
