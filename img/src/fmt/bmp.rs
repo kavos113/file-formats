@@ -69,7 +69,7 @@ struct BitmapInfoHeader {
     bi_height: i32,
     bi_planes: u16,
     bi_bit_count: u16,
-    bi_compression: u32,
+    bi_compression: Compression,
     bi_size_image: u32,
     bi_x_pels_per_meter: i32,
     bi_y_pels_per_meter: i32,
@@ -77,20 +77,53 @@ struct BitmapInfoHeader {
     bi_clr_important: u32,
 }
 
+enum Compression {
+    BI_RGB = 0,
+    BI_RLE8 = 1,
+    BI_RLE4 = 2,
+    BI_BITFIELDS = 3,
+    BI_JPEG = 4,
+    BI_PNG = 5,
+}
+
 impl BitmapInfoHeader {
     fn read_from(reader: &mut Reader) -> Self {
+        let bi_size = reader.read_u32();
+        let bi_width = reader.read_i32();
+        let bi_height = reader.read_i32();
+        let bi_planes = reader.read_u16();
+        let bi_bit_count = reader.read_u16();
+        let bi_compression_value = reader.read_u32();
+        let bi_compression = match bi_compression_value {
+            0 => Compression::BI_RGB,
+            1 => Compression::BI_RLE8,
+            2 => Compression::BI_RLE4,
+            3 => Compression::BI_BITFIELDS,
+            4 => Compression::BI_JPEG,
+            5 => Compression::BI_PNG,
+            _ => {
+                println!("Warning: Unknown compression type: {}", bi_compression_value);
+                Compression::BI_RGB // Default to no compression
+            }
+        };
+        let bi_size_image = reader.read_u32();
+        let bi_x_pels_per_meter = reader.read_i32();
+        let bi_y_pels_per_meter = reader.read_i32();
+        let bi_clr_used = reader.read_u32();
+        let bi_clr_important = reader.read_u32();
+
         BitmapInfoHeader {
-            bi_size: reader.read_u32(),
-            bi_width: reader.read_i32(),
-            bi_height: reader.read_i32(),
-            bi_planes: reader.read_u16(),
-            bi_bit_count: reader.read_u16(),
-            bi_compression: reader.read_u32(),
-            bi_size_image: reader.read_u32(),
-            bi_x_pels_per_meter: reader.read_i32(),
-            bi_y_pels_per_meter: reader.read_i32(),
-            bi_clr_used: reader.read_u32(),
-            bi_clr_important: reader.read_u32(),
+            bi_size,
+            bi_width,
+            bi_height,
+            bi_planes,
+            bi_bit_count,
+            bi_compression,
+            bi_size_image,
+            bi_x_pels_per_meter,
+            bi_y_pels_per_meter,
+            bi_clr_used,
+            bi_clr_important,
         }
     }
 }
@@ -109,6 +142,20 @@ impl Display for BitmapInfoHeader {
         write!(f, "Y Pixels per Meter:  {}\n", self.bi_y_pels_per_meter)?;
         write!(f, "Colors Used:         {}\n", self.bi_clr_used)?;
         write!(f, "Important Colors:    {}\n\n", self.bi_clr_important)
+    }
+}
+
+impl Display for Compression {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let description = match self {
+            Compression::BI_RGB => "BI_RGB (No compression)",
+            Compression::BI_RLE8 => "BI_RLE8 (8-bit RLE compression)",
+            Compression::BI_RLE4 => "BI_RLE4 (4-bit RLE compression)",
+            Compression::BI_BITFIELDS => "BI_BITFIELDS (Bit field masks)",
+            Compression::BI_JPEG => "BI_JPEG (JPEG compression)",
+            Compression::BI_PNG => "BI_PNG (PNG compression)",
+        };
+        write!(f, "{}", description)
     }
 }
 
