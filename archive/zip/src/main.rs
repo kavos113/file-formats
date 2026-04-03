@@ -1,6 +1,6 @@
+use crate::fmt::read_file;
 use std::env;
 use std::fs::File;
-use crate::fmt::central_directory::EndOfCentralDirectoryRecord;
 
 mod fmt;
 pub mod reader;
@@ -13,6 +13,5 @@ fn main() {
     }
 
     let mut file = File::open(&args[1]).expect("Failed to open file");
-    let record = EndOfCentralDirectoryRecord::find_record(&mut file);
-    println!("{}", record);
+    read_file(&mut file);
 }
