@@ -107,7 +107,7 @@ impl<'a> Reader<'a> {
     }
 }
 
-pub struct BitReader<'a, R:Read> {
+pub struct BitReader<'a, R: Read> {
     reader: &'a mut BufReader<R>,
     buffer: u64,
     remain_bits: usize,

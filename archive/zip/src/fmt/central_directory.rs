@@ -1,9 +1,9 @@
+use crate::reader::Reader;
+use chrono::{DateTime, Duration, Utc};
 use std::cmp::min;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use chrono::{DateTime, Duration, Utc};
-use crate::reader::Reader;
 
 pub struct EndOfCentralDirectoryRecord {
     signature: u32,
@@ -14,21 +14,20 @@ pub struct EndOfCentralDirectoryRecord {
     central_directory_size: u32,
     central_directory_offset: u32,
     comment_length: u16,
-    comment: String
+    comment: String,
 }
 
 impl EndOfCentralDirectoryRecord {
     const MAX_LENGTH: i64 = 22 + 65535;
 
     pub fn find_record(file: &mut File) -> Self {
-        let file_size = file
-            .metadata()
-            .expect("Failed to get file metadata")
-            .len();
+        let file_size = file.metadata().expect("Failed to get file metadata").len();
         if file_size < Self::MAX_LENGTH as u64 {
-            file.seek(SeekFrom::Start(0)).expect("Failed to seek to start of file");
+            file.seek(SeekFrom::Start(0))
+                .expect("Failed to seek to start of file");
         } else {
-            file.seek(SeekFrom::End(-Self::MAX_LENGTH)).expect("Failed to seek to end of file");
+            file.seek(SeekFrom::End(-Self::MAX_LENGTH))
+                .expect("Failed to seek to end of file");
         }
 
         let buf_size = min(Self::MAX_LENGTH as usize, file_size as usize);
@@ -81,7 +80,7 @@ impl EndOfCentralDirectoryRecord {
             central_directory_size,
             central_directory_offset,
             comment_length,
-            comment
+            comment,
         })
     }
 }
@@ -89,14 +88,46 @@ impl EndOfCentralDirectoryRecord {
 impl Display for EndOfCentralDirectoryRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "---------- End of Central Directory Record ----------")?;
-        writeln!(f, "Signature:                           0x{:08x}", self.signature)?;
-        writeln!(f, "Current Disk Number:                 {}", self.disk_number)?;
-        writeln!(f, "Central Directory Start Disk Number: {}", self.central_directory_start_disk_number)?;
-        writeln!(f, "Total Entries on Current Disk:       {}", self.total_entries_disk)?;
-        writeln!(f, "Total Entries:                       {}", self.total_entries)?;
-        writeln!(f, "Central Directory Size:              {}", self.central_directory_size)?;
-        writeln!(f, "Central Directory Offset:            {}", self.central_directory_offset)?;
-        writeln!(f, "Comment Length:                      {}", self.comment_length)?;
+        writeln!(
+            f,
+            "Signature:                           0x{:08x}",
+            self.signature
+        )?;
+        writeln!(
+            f,
+            "Current Disk Number:                 {}",
+            self.disk_number
+        )?;
+        writeln!(
+            f,
+            "Central Directory Start Disk Number: {}",
+            self.central_directory_start_disk_number
+        )?;
+        writeln!(
+            f,
+            "Total Entries on Current Disk:       {}",
+            self.total_entries_disk
+        )?;
+        writeln!(
+            f,
+            "Total Entries:                       {}",
+            self.total_entries
+        )?;
+        writeln!(
+            f,
+            "Central Directory Size:              {}",
+            self.central_directory_size
+        )?;
+        writeln!(
+            f,
+            "Central Directory Offset:            {}",
+            self.central_directory_offset
+        )?;
+        writeln!(
+            f,
+            "Comment Length:                      {}",
+            self.comment_length
+        )?;
         writeln!(f, "Comment: \n  {}\n", self.comment)?;
 
         Ok(())
@@ -105,7 +136,7 @@ impl Display for EndOfCentralDirectoryRecord {
 
 pub struct CentralDirectory {
     pub(crate) headers: Vec<CentralDirectoryHeader>,
-    signature: Option<CentralDirectoryDigitalSignature>
+    signature: Option<CentralDirectoryDigitalSignature>,
 }
 
 impl CentralDirectory {
@@ -117,7 +148,11 @@ impl CentralDirectory {
         file.read_exact(&mut buffer)
             .expect("Failed to read central directory");
 
-        Self::read_from(&mut Reader::new(&buffer), record.total_entries as usize, record.central_directory_size as usize)
+        Self::read_from(
+            &mut Reader::new(&buffer),
+            record.total_entries as usize,
+            record.central_directory_size as usize,
+        )
     }
 
     fn read_from(reader: &mut Reader, num_entries: usize, total_bytes: usize) -> Self {
@@ -132,10 +167,7 @@ impl CentralDirectory {
             None
         };
 
-        Self {
-            headers,
-            signature
-        }
+        Self { headers, signature }
     }
 }
 
@@ -169,14 +201,17 @@ pub struct CentralDirectoryHeader {
     pub(crate) local_header_offset: u32,
     file_name: String,
     extra_field: Vec<ExtraField>,
-    file_comment: String
+    file_comment: String,
 }
 
 impl CentralDirectoryHeader {
     fn read_from(reader: &mut Reader) -> Self {
         let signature = reader.read_u32();
         if signature != 0x02014b50 {
-            panic!("Invalid central directory header signature: 0x{:08x}", signature);
+            panic!(
+                "Invalid central directory header signature: 0x{:08x}",
+                signature
+            );
         }
 
         let version_made_by = reader.read_u16();
@@ -229,7 +264,7 @@ impl CentralDirectoryHeader {
             local_header_offset,
             file_name,
             extra_field,
-            file_comment
+            file_comment,
         }
     }
 }
@@ -238,11 +273,28 @@ impl Display for CentralDirectoryHeader {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "---------- Central Directory Header ----------")?;
         writeln!(f, "Signature:                0x{:08x}", self.signature)?;
-        writeln!(f, "Version Made By:          {}", format_version_made_by(self.version_made_by))?;
-        writeln!(f, "Version Needed:           {}", format_version_needed(self.version_needed))?;
-        writeln!(f, "General Purpose Flag:     0b{:016b}", self.general_purpose_flag)?;
+        writeln!(
+            f,
+            "Version Made By:          {}",
+            format_version_made_by(self.version_made_by)
+        )?;
+        writeln!(
+            f,
+            "Version Needed:           {}",
+            format_version_needed(self.version_needed)
+        )?;
+        writeln!(
+            f,
+            "General Purpose Flag:     0b{:016b}",
+            self.general_purpose_flag
+        )?;
         writeln!(f, "Compression Method:       {}", self.compression_method)?;
-        writeln!(f, "Last Modified             {} {}", format_date(self.last_mod_date), format_time(self.last_mod_time))?;
+        writeln!(
+            f,
+            "Last Modified             {} {}",
+            format_date(self.last_mod_date),
+            format_time(self.last_mod_time)
+        )?;
         writeln!(f, "CRC-32:                   0x{:08x}", self.crc32)?;
         writeln!(f, "Compressed Size:          {}", self.compressed_size)?;
         writeln!(f, "Uncompressed Size:        {}", self.uncompressed_size)?;
@@ -250,11 +302,21 @@ impl Display for CentralDirectoryHeader {
         writeln!(f, "Extra Field Length:       {}", self.extra_field_length)?;
         writeln!(f, "File Comment Length:      {}", self.file_comment_length)?;
         writeln!(f, "Disk Number Start:        {}", self.disk_number_start)?;
-        writeln!(f, "Internal File Attributes: 0b{:016b}", self.internal_file_attributes)?;
-        writeln!(f, "External File Attributes: {}", format_external_attributes(self.external_file_attributes, self.version_made_by))?;
+        writeln!(
+            f,
+            "Internal File Attributes: 0b{:016b}",
+            self.internal_file_attributes
+        )?;
+        writeln!(
+            f,
+            "External File Attributes: {}",
+            format_external_attributes(self.external_file_attributes, self.version_made_by)
+        )?;
         writeln!(f, "Local Header Offset:      {}", self.local_header_offset)?;
         writeln!(f, "File Name: \n  {}", self.file_name)?;
-        self.extra_field.iter().try_for_each(|field| writeln!(f, "{}", field))?;
+        self.extra_field
+            .iter()
+            .try_for_each(|field| writeln!(f, "{}", field))?;
         writeln!(f, "File Comment: \n  {}\n", self.file_comment)?;
 
         Ok(())
@@ -286,7 +348,7 @@ fn format_version_made_by(version: u16) -> String {
         17 => "Tandem",
         18 => "OS/400",
         19 => "OS X (Darwin)",
-        _ => "Unknown"
+        _ => "Unknown",
     };
 
     let major = ver / 10;
@@ -340,7 +402,7 @@ fn format_external_attributes(attrs: u32, made_by: u16) -> String {
             )
         }
         3 => format!("Unix Permissions: 0o{:o}", (attrs >> 16) & 0xffff),
-        _ => format!("External Attributes: 0x{:08x}", attrs)
+        _ => format!("External Attributes: 0x{:08x}", attrs),
     }
 }
 
@@ -366,7 +428,7 @@ pub enum CompressionMethod {
     JPEG = 96,
     WavPack = 97,
     PPMd = 98,
-    AEX = 99
+    AEX = 99,
 }
 
 impl CompressionMethod {
@@ -394,7 +456,7 @@ impl CompressionMethod {
             97 => CompressionMethod::WavPack,
             98 => CompressionMethod::PPMd,
             99 => CompressionMethod::AEX,
-            _ => panic!("Unknown compression method: {}", value)
+            _ => panic!("Unknown compression method: {}", value),
         }
     }
 }
@@ -423,7 +485,7 @@ impl Display for CompressionMethod {
             CompressionMethod::JPEG => "JPEG",
             CompressionMethod::WavPack => "WavPack compressed data",
             CompressionMethod::PPMd => "PPMd version I, Rev 1",
-            CompressionMethod::AEX => "AE-x encryption marker"
+            CompressionMethod::AEX => "AE-x encryption marker",
         };
 
         write!(f, "{}", method_str)
@@ -433,14 +495,17 @@ impl Display for CompressionMethod {
 struct CentralDirectoryDigitalSignature {
     signature: u32,
     size_of_data: u32,
-    data: Vec<u8>
+    data: Vec<u8>,
 }
 
 impl CentralDirectoryDigitalSignature {
     fn read_from(reader: &mut Reader) -> Self {
         let signature = reader.read_u32();
         if signature != 0x05054b50 {
-            panic!("Invalid central directory digital signature: 0x{:08x}", signature);
+            panic!(
+                "Invalid central directory digital signature: 0x{:08x}",
+                signature
+            );
         }
 
         let size_of_data = reader.read_u32();
@@ -449,7 +514,7 @@ impl CentralDirectoryDigitalSignature {
         Self {
             signature,
             size_of_data,
-            data
+            data,
         }
     }
 }
@@ -457,7 +522,7 @@ impl CentralDirectoryDigitalSignature {
 enum ExtraField {
     Zip64(ExtraFieldZip64),
     OS2(ExtraFieldOS2),
-    NTFS(ExtraFieldNTFS)
+    NTFS(ExtraFieldNTFS),
 }
 
 impl ExtraField {
@@ -468,7 +533,7 @@ impl ExtraField {
             0x0001 => ExtraField::Zip64(ExtraFieldZip64::read_from(reader)),
             0x000d => ExtraField::OS2(ExtraFieldOS2::read_from(reader)),
             0x000a => ExtraField::NTFS(ExtraFieldNTFS::read_from(reader)),
-            _ => panic!("Unknown extra field header ID: 0x{:04x}", header_id)
+            _ => panic!("Unknown extra field header ID: 0x{:04x}", header_id),
         }
     }
 }
@@ -478,7 +543,7 @@ impl Display for ExtraField {
         match self {
             ExtraField::Zip64(zip64) => write!(f, "{}", zip64)?,
             ExtraField::OS2(os2) => write!(f, "{}", os2)?,
-            ExtraField::NTFS(ntfs) => write!(f, "{}", ntfs)?
+            ExtraField::NTFS(ntfs) => write!(f, "{}", ntfs)?,
         }
 
         Ok(())
@@ -491,7 +556,7 @@ struct ExtraFieldZip64 {
     original_size: u64,
     compressed_size: u64,
     local_header_offset: u64,
-    disk_start_number: u32
+    disk_start_number: u32,
 }
 
 impl ExtraFieldZip64 {
@@ -517,14 +582,17 @@ impl ExtraFieldZip64 {
             original_size,
             compressed_size,
             local_header_offset,
-            disk_start_number
+            disk_start_number,
         }
     }
 }
 
 impl Display for ExtraFieldZip64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "---------- Zip64 Extended Information Extra Field ----------")?;
+        writeln!(
+            f,
+            "---------- Zip64 Extended Information Extra Field ----------"
+        )?;
         writeln!(f, "Header ID:              0x{:04x}", self.header_id)?;
         writeln!(f, "Data Size:              {}", self.data_size)?;
         writeln!(f, "Original Size:          {}", self.original_size)?;
@@ -542,7 +610,7 @@ struct ExtraFieldOS2 {
     block_size: u16,
     compression_type: u16,
     ea_crc: u32,
-    block: Vec<u8>
+    block: Vec<u8>,
 }
 
 impl ExtraFieldOS2 {
@@ -568,7 +636,7 @@ impl ExtraFieldOS2 {
             block_size,
             compression_type,
             ea_crc,
-            block
+            block,
         }
     }
 }
@@ -590,7 +658,7 @@ impl Display for ExtraFieldOS2 {
 struct ExtraFieldNTFS {
     header_id: u16,
     data_size: u16,
-    attribute_block: Vec<ExtraFieldNTFSAttributeBlock>
+    attribute_block: Vec<ExtraFieldNTFSAttributeBlock>,
 }
 
 impl ExtraFieldNTFS {
@@ -615,7 +683,7 @@ impl ExtraFieldNTFS {
         Self {
             header_id,
             data_size,
-            attribute_block
+            attribute_block,
         }
     }
 }
@@ -625,7 +693,7 @@ struct ExtraFieldNTFSAttributeBlock {
     size: u16,
     mod_time: u64,
     access_time: u64,
-    create_time: u64
+    create_time: u64,
 }
 
 impl ExtraFieldNTFSAttributeBlock {
@@ -645,7 +713,7 @@ impl ExtraFieldNTFSAttributeBlock {
             size,
             mod_time,
             access_time,
-            create_time
+            create_time,
         }
     }
 }
@@ -669,9 +737,21 @@ impl Display for ExtraFieldNTFS {
             writeln!(f, "Attribute Block {}:", i + 1)?;
             writeln!(f, "  Tag:                 0x{:04x}", block.tag)?;
             writeln!(f, "  Size:                {}", block.size)?;
-            writeln!(f, "  Last Modified Time:  {}", format_ntfs_time(block.mod_time))?;
-            writeln!(f, "  Last Access Time:    {}", format_ntfs_time(block.access_time))?;
-            writeln!(f, "  Creation Time:       {}", format_ntfs_time(block.create_time))?;
+            writeln!(
+                f,
+                "  Last Modified Time:  {}",
+                format_ntfs_time(block.mod_time)
+            )?;
+            writeln!(
+                f,
+                "  Last Access Time:    {}",
+                format_ntfs_time(block.access_time)
+            )?;
+            writeln!(
+                f,
+                "  Creation Time:       {}",
+                format_ntfs_time(block.create_time)
+            )?;
         }
 
         Ok(())

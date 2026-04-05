@@ -1,8 +1,10 @@
+use crate::reader::BitReader;
 use std::fs::File;
 use std::io::Read;
-use crate::reader::BitReader;
 
-const LENGTH_CODE_ORDER: [usize; 19] = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+const LENGTH_CODE_ORDER: [usize; 19] = [
+    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
+];
 
 pub fn analyze_file<R: Read>(r: &mut BitReader<R>, out: &mut File) {
     let is_final = r.read_bits(1);
@@ -58,17 +60,16 @@ struct CodeTableRecord {
 }
 
 fn build_code_table(code_lengths: &[CodeLength]) -> Vec<CodeTableRecord> {
-    let max_length = code_lengths
-        .iter()
-        .map(|cl| cl.length)
-        .max()
-        .unwrap_or(0);
+    let max_length = code_lengths.iter().map(|cl| cl.length).max().unwrap_or(0);
 
-    let mut code_table = vec![CodeTableRecord{
-        symbol: 0,
-        length: 0,
-        code: 0,
-    }; 1 << max_length];
+    let mut code_table = vec![
+        CodeTableRecord {
+            symbol: 0,
+            length: 0,
+            code: 0,
+        };
+        1 << max_length
+    ];
 
     let mut code_lengths = code_lengths.to_vec();
     code_lengths.sort_by_key(|cl| (cl.length, cl.symbol));
@@ -100,51 +101,93 @@ mod tests {
     #[test]
     fn test_build_code_table() {
         let code_lengths = vec![
-            CodeLength { symbol: 0, length: 3 },
-            CodeLength { symbol: 1, length: 3 },
-            CodeLength { symbol: 2, length: 3 },
-            CodeLength { symbol: 3, length: 3 },
-            CodeLength { symbol: 4, length: 3 },
-            CodeLength { symbol: 5, length: 2 },
-            CodeLength { symbol: 6, length: 4 },
+            CodeLength {
+                symbol: 0,
+                length: 3,
+            },
+            CodeLength {
+                symbol: 1,
+                length: 3,
+            },
+            CodeLength {
+                symbol: 2,
+                length: 3,
+            },
+            CodeLength {
+                symbol: 3,
+                length: 3,
+            },
+            CodeLength {
+                symbol: 4,
+                length: 3,
+            },
+            CodeLength {
+                symbol: 5,
+                length: 2,
+            },
+            CodeLength {
+                symbol: 6,
+                length: 4,
+            },
         ];
 
         let code_table = build_code_table(&code_lengths);
         assert_eq!(code_table.len(), code_lengths.len());
-        assert_eq!(code_table[0], CodeTableRecord{
-            symbol: 5,
-            length: 2,
-            code: 0b00,
-        });
-        assert_eq!(code_table[1], CodeTableRecord{
-            symbol: 0,
-            length: 3,
-            code: 0b010,
-        });
-        assert_eq!(code_table[2], CodeTableRecord{
-            symbol: 1,
-            length: 3,
-            code: 0b011,
-        });
-        assert_eq!(code_table[3], CodeTableRecord{
-            symbol: 2,
-            length: 3,
-            code: 0b100,
-        });
-        assert_eq!(code_table[4], CodeTableRecord{
-            symbol: 3,
-            length: 3,
-            code: 0b101,
-        });
-        assert_eq!(code_table[5], CodeTableRecord{
-            symbol: 4,
-            length: 3,
-            code: 0b110,
-        });
-        assert_eq!(code_table[6], CodeTableRecord{
-            symbol: 6,
-            length: 4,
-            code: 0b1110,
-        });
+        assert_eq!(
+            code_table[0],
+            CodeTableRecord {
+                symbol: 5,
+                length: 2,
+                code: 0b00,
+            }
+        );
+        assert_eq!(
+            code_table[1],
+            CodeTableRecord {
+                symbol: 0,
+                length: 3,
+                code: 0b010,
+            }
+        );
+        assert_eq!(
+            code_table[2],
+            CodeTableRecord {
+                symbol: 1,
+                length: 3,
+                code: 0b011,
+            }
+        );
+        assert_eq!(
+            code_table[3],
+            CodeTableRecord {
+                symbol: 2,
+                length: 3,
+                code: 0b100,
+            }
+        );
+        assert_eq!(
+            code_table[4],
+            CodeTableRecord {
+                symbol: 3,
+                length: 3,
+                code: 0b101,
+            }
+        );
+        assert_eq!(
+            code_table[5],
+            CodeTableRecord {
+                symbol: 4,
+                length: 3,
+                code: 0b110,
+            }
+        );
+        assert_eq!(
+            code_table[6],
+            CodeTableRecord {
+                symbol: 6,
+                length: 4,
+                code: 0b1110,
+            }
+        );
     }
 }

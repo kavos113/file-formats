@@ -1,10 +1,10 @@
-use std::fs::File;
-use std::io::{BufReader, Seek, SeekFrom};
 use crate::fmt::algorithm::decompress_file;
 use crate::fmt::central_directory::{CentralDirectory, EndOfCentralDirectoryRecord};
+use std::fs::File;
+use std::io::{BufReader, Seek, SeekFrom};
 
-mod central_directory;
 mod algorithm;
+mod central_directory;
 
 pub fn read_file(mut f: File) {
     let record = EndOfCentralDirectoryRecord::find_record(&mut f);
@@ -15,7 +15,8 @@ pub fn read_file(mut f: File) {
 
     let mut r = BufReader::new(f);
     for header in &central_directory.headers {
-        r.seek(SeekFrom::Start(header.local_header_offset as u64)).unwrap();
+        r.seek(SeekFrom::Start(header.local_header_offset as u64))
+            .unwrap();
         decompress_file(&mut r, header);
     }
 }
