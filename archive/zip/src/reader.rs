@@ -107,14 +107,14 @@ impl<'a> Reader<'a> {
     }
 }
 
-pub struct BitReader<'a> {
-    reader: &'a mut BufReader<File>,
+pub struct BitReader<'a, R:Read> {
+    reader: &'a mut BufReader<R>,
     buffer: u64,
     remain_bits: usize,
 }
 
-impl<'a> BitReader<'a> {
-    pub fn new(reader: &'a mut BufReader<File>) -> Self {
+impl<'a, R: Read> BitReader<'a, R> {
+    pub fn new(reader: &'a mut BufReader<R>) -> Self {
         BitReader {
             reader,
             buffer: 0,
@@ -152,5 +152,33 @@ impl<'a> BitReader<'a> {
         if skip_bits > 0 {
             self.read_bits(skip_bits);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_reader() {
+        let data = [0x01, 0x02, 0x03, 0x04];
+        let mut reader = Reader::new(&data);
+
+        assert_eq!(reader.read_u8(), 0x01);
+        assert_eq!(reader.read_u16(), 0x0302);
+        assert_eq!(reader.read_u8(), 0x04);
+    }
+
+    #[test]
+    fn test_bit_reader() {
+        let data = [0b10101010, 0b11001100];
+        let mut buf_reader = BufReader::new(&data[..]);
+        let mut bit_reader = BitReader::new(&mut buf_reader);
+
+        assert_eq!(bit_reader.read_bits(1), 0b0);
+        assert_eq!(bit_reader.read_bits(3), 0b101);
+        assert_eq!(bit_reader.read_bits(5), 0b01010);
+        assert_eq!(bit_reader.read_bits(2), 0b10);
+        assert_eq!(bit_reader.read_bits(5), 0b11001);
     }
 }
