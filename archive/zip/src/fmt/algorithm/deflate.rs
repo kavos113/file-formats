@@ -25,20 +25,26 @@ pub fn analyze_file<R: Read>(r: &mut BitReader<R>, out: &mut File) {
             let code_length_codes = (0..num_code_length_codes)
                 .map(|_| r.read_bits(3) as u8)
                 .enumerate()
-                .map(|(i, len)| (LENGTH_CODE_ORDER[i], len))
-                .filter(|&(_, len)| len > 0)
+                .map(|(i, len)| CodeLength {
+                    symbol: LENGTH_CODE_ORDER[i] as u16,
+                    length: len,
+                })
+                .filter(|cl| cl.length > 0)
                 .collect::<Vec<_>>();
 
-            println!("num_literal_length_codes: {}, num_distance_codes: {}, num_code_length_codes: {}",
-                num_literal_length_codes, num_distance_codes, num_code_length_codes);
-            println!("code_length_codes: {:?}", code_length_codes);
+            // println!("num_literal_length_codes: {}, num_distance_codes: {}, num_code_length_codes: {}",
+            //     num_literal_length_codes, num_distance_codes, num_code_length_codes);
+            // println!("code_length_codes: {:?}", code_length_codes);
+            //
+            let code_length_code_table = build_code_table(&code_length_codes);
+            println!("code_length_code_table: {:?}", code_length_code_table);
         }
 
         _ => panic!("Invalid block type: {:#b}", block_type),
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 struct CodeLength {
     symbol: u16,
     length: u8,
@@ -58,7 +64,11 @@ fn build_code_table(code_lengths: &[CodeLength]) -> Vec<CodeTableRecord> {
         .max()
         .unwrap_or(0);
 
-    let mut code_table = Vec::with_capacity(1 << max_length);
+    let mut code_table = vec![CodeTableRecord{
+        symbol: 0,
+        length: 0,
+        code: 0,
+    }; 1 << max_length];
 
     let mut code_lengths = code_lengths.to_vec();
     code_lengths.sort_by_key(|cl| (cl.length, cl.symbol));
@@ -71,11 +81,11 @@ fn build_code_table(code_lengths: &[CodeLength]) -> Vec<CodeTableRecord> {
             prev_length = cl.length;
         }
 
-        code_table.push(CodeTableRecord {
+        code_table[code as usize] = CodeTableRecord {
             symbol: cl.symbol,
             length: cl.length,
             code,
-        });
+        };
 
         code += 1;
     }
