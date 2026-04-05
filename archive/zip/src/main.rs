@@ -12,6 +12,6 @@ fn main() {
         return;
     }
 
-    let mut file = File::open(&args[1]).expect("Failed to open file");
-    read_file(&mut file);
+    let file = File::open(&args[1]).expect("Failed to open file");
+    read_file(file);
 }

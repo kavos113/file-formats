@@ -104,7 +104,7 @@ impl Display for EndOfCentralDirectoryRecord {
 }
 
 pub struct CentralDirectory {
-    headers: Vec<CentralDirectoryHeader>,
+    pub(crate) headers: Vec<CentralDirectoryHeader>,
     signature: Option<CentralDirectoryDigitalSignature>
 }
 
@@ -166,7 +166,7 @@ pub struct CentralDirectoryHeader {
     disk_number_start: u16,
     internal_file_attributes: u16,
     external_file_attributes: u32,
-    local_header_offset: u32,
+    pub(crate) local_header_offset: u32,
     file_name: String,
     extra_field: Vec<ExtraField>,
     file_comment: String
