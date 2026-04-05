@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::{BufReader, Read};
+
 pub struct Reader<'a> {
     full_data: &'a [u8],
     current: &'a [u8],
@@ -101,5 +104,53 @@ impl<'a> Reader<'a> {
         }
         self.current = &self.full_data[new_offset as usize..];
         self.read_bytes = new_offset as usize;
+    }
+}
+
+pub struct BitReader<'a> {
+    reader: &'a mut BufReader<File>,
+    buffer: u64,
+    remain_bits: usize,
+}
+
+impl<'a> BitReader<'a> {
+    pub fn new(reader: &'a mut BufReader<File>) -> Self {
+        BitReader {
+            reader,
+            buffer: 0,
+            remain_bits: 0,
+        }
+    }
+
+    fn fill_buffer(&mut self) {
+        let mut byte = [0u8; 1];
+
+        if self.reader.read_exact(&mut byte).is_ok() {
+            self.buffer |= (byte[0] as u64) << self.remain_bits;
+            self.remain_bits += 8;
+        }
+    }
+
+    pub fn read_bits(&mut self, n: usize) -> u64 {
+        if n > 64 {
+            panic!("Cannot read more than 64 bits at a time");
+        }
+
+        while self.remain_bits < n {
+            self.fill_buffer();
+        }
+
+        let result = self.buffer & ((1u64 << n) - 1);
+        self.buffer >>= n;
+        self.remain_bits -= n;
+
+        result
+    }
+
+    pub fn align_to_byte(&mut self) {
+        let skip_bits = self.remain_bits % 8;
+        if skip_bits > 0 {
+            self.read_bits(skip_bits);
+        }
     }
 }

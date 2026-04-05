@@ -149,7 +149,7 @@ impl Display for CentralDirectory {
     }
 }
 
-struct CentralDirectoryHeader {
+pub struct CentralDirectoryHeader {
     signature: u32,
     version_made_by: u16,
     version_needed: u16,
@@ -344,7 +344,7 @@ fn format_external_attributes(attrs: u32, made_by: u16) -> String {
     }
 }
 
-enum CompressionMethod {
+pub enum CompressionMethod {
     Stored = 0,
     Shrunk = 1,
     Reduced1 = 2,
@@ -370,7 +370,7 @@ enum CompressionMethod {
 }
 
 impl CompressionMethod {
-    fn from_u16(value: u16) -> Self {
+    pub fn from_u16(value: u16) -> Self {
         match value {
             0 => CompressionMethod::Stored,
             1 => CompressionMethod::Shrunk,
