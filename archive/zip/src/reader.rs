@@ -1,3 +1,4 @@
+use std::cmp::{max, min};
 use std::fs::File;
 use std::io::{BufReader, Read};
 
@@ -127,10 +128,11 @@ impl<'a, R: Read> BitReader<'a, R> {
 
         if self.reader.read_exact(&mut byte).is_ok() {
             self.buffer |= (byte[0] as u64) << self.remain_bits;
-            self.remain_bits += 8;
+            self.remain_bits = min(self.remain_bits + 8, 64);
         }
     }
 
+    // when buf 00110 -> read 3 bits -> result 110
     pub fn read_bits(&mut self, n: usize) -> u64 {
         if n > 64 {
             panic!("Cannot read more than 64 bits at a time");
@@ -145,6 +147,47 @@ impl<'a, R: Read> BitReader<'a, R> {
         self.remain_bits -= n;
 
         result
+    }
+
+    // when buf 00110 -> read 3 bits rev -> result 011
+    pub fn read_bits_rev(&mut self, n: usize) -> u64 {
+        if n > 64 {
+            panic!("Cannot read more than 64 bits at a time");
+        }
+
+        while self.remain_bits < n {
+            self.fill_buffer();
+        }
+
+        let result = (self.buffer & ((1u64 << n) - 1)).reverse_bits() >> (64 - n);
+        self.buffer >>= n;
+        self.remain_bits -= n;
+
+        result
+    }
+
+    pub fn peek_bits(&mut self, n: usize) -> u64 {
+        if n > 64 {
+            panic!("Cannot peek more than 64 bits at a time");
+        }
+
+        while self.remain_bits < n {
+            self.fill_buffer();
+        }
+
+        self.buffer & ((1u64 << n) - 1)
+    }
+
+    pub fn peek_bits_rev(&mut self, n: usize) -> u64 {
+        if n > 64 {
+            panic!("Cannot peek more than 64 bits at a time");
+        }
+
+        while self.remain_bits < n {
+            self.fill_buffer();
+        }
+
+        (self.buffer & ((1u64 << n) - 1)).reverse_bits() >> (64 - n)
     }
 
     pub fn align_to_byte(&mut self) {
