@@ -4,6 +4,7 @@ use std::fs::File;
 
 mod fmt;
 pub mod reader;
+pub mod writer;
 
 fn main() {
     let args = env::args().collect::<Vec<String>>();
