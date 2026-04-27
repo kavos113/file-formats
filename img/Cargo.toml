@@ -17,4 +17,4 @@ features = [
 ]
 
 [dependencies]
-img-renderer-rs = { path = "../lib/img-renderer-rs" }
+img-renderer = { path = "../lib/rs/img-renderer" }

@@ -1,4 +1,4 @@
-use img_renderer_rs::Image;
+use img_renderer::Image;
 
 mod bmp;
 mod ppm;

@@ -1,5 +1,5 @@
 use std::env;
-use img_renderer_rs::{Image, ImgRenderer};
+use img_renderer::{Image, ImgRenderer};
 
 pub mod fmt;
 pub mod reader;
