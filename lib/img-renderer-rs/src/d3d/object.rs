@@ -1,4 +1,4 @@
-use crate::img::{Image, Pixel};
+use crate::{Image, Pixel};
 use windows::Win32::Graphics::Direct3D12::{
     D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_CPU_PAGE_PROPERTY_WRITE_BACK,
     D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING, D3D12_DESCRIPTOR_HEAP_DESC,

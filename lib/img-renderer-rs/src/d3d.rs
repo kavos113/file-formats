@@ -4,7 +4,7 @@ mod object;
 mod pipeline;
 mod resource;
 
-use crate::img::Image;
+use crate::Image;
 use crate::d3d::device::Device;
 use crate::d3d::resource::Resources;
 use crate::Renderer;

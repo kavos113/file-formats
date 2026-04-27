@@ -1,4 +1,4 @@
-use crate::img::Image;
+use crate::Image;
 use crate::d3d::object::Object;
 use crate::d3d::pipeline::Pipeline;
 use windows::Win32::Foundation::{HANDLE, HWND, RECT};

@@ -1,6 +1,6 @@
-use crate::img::{Image, Pixel};
 use std::fs;
 use std::str::Lines;
+use img_renderer_rs::{Image, Pixel};
 
 pub fn load_ppm(path: &str) -> Image {
     let data = fs::read_to_string(path).expect("Failed to read file");

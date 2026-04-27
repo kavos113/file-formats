@@ -1,10 +1,8 @@
 use std::env;
-use crate::render::renderer::Window;
+use img_renderer_rs::ImgRenderer;
 
 pub mod fmt;
-pub mod img;
 pub mod reader;
-pub mod render;
 
 fn main() {
     let args = env::args().collect::<Vec<String>>();
@@ -14,6 +12,6 @@ fn main() {
     }
 
     let img = fmt::load_image(&args[1]);
-    let mut window = Window::new(100, 100, img.width as i32, img.height as i32, &img);
-    window.run();
+    let mut renderer = ImgRenderer::new(100, 100, img.width as i32, img.height as i32, &img);
+    renderer.run();
 }

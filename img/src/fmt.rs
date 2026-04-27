@@ -1,4 +1,4 @@
-use crate::img::Image;
+use img_renderer_rs::Image;
 
 mod bmp;
 mod ppm;
