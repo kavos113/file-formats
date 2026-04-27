@@ -4,10 +4,10 @@ mod object;
 mod pipeline;
 mod resource;
 
-use crate::img::Image;
-use crate::render::d3d::device::Device;
-use crate::render::d3d::resource::Resources;
-use crate::render::renderer::Renderer;
+use crate::Image;
+use crate::d3d::device::Device;
+use crate::d3d::resource::Resources;
+use crate::Renderer;
 use windows::Win32::Foundation::HWND;
 
 pub struct D3DRenderer {

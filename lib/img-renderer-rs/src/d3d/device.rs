@@ -1,4 +1,4 @@
-use crate::render::d3d::debug::{Debug, enable_debug};
+use crate::d3d::debug::{Debug, enable_debug};
 use windows::Win32::Graphics::Direct3D::{
     D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_12_1,
 };

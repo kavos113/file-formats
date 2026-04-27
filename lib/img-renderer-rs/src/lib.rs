@@ -1,5 +1,6 @@
-use crate::img::Image;
-use crate::render::d3d::D3DRenderer;
+mod d3d;
+
+use crate::d3d::D3DRenderer;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::UpdateWindow;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
@@ -11,6 +12,41 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 use windows::core::{PCWSTR, w};
 
+pub struct Image {
+    pub width: u32,
+    pub height: u32,
+    pub data: Vec<Pixel>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Pixel {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
+}
+
+impl Image {
+    pub fn sample_image(width: u32, height: u32) -> Self {
+        let mut data = Vec::with_capacity((width * height) as usize);
+        for y in 0..height {
+            for x in 0..width {
+                let r = (x * 255 / width) as u8;
+                let g = (y * 255 / height) as u8;
+                let b = 128;
+                let a = 255;
+                data.push(Pixel { r, g, b, a });
+            }
+        }
+        Self {
+            width,
+            height,
+            data,
+        }
+    }
+}
+
+
 pub trait Renderer {
     fn new(hwnd: &HWND, img: &Image) -> Self
     where
@@ -19,12 +55,12 @@ pub trait Renderer {
     fn render(&mut self);
 }
 
-pub struct Window {
+pub struct ImgRenderer {
     hwnd: HWND,
     renderer: Box<dyn Renderer>,
 }
 
-impl Window {
+impl ImgRenderer {
     const CLASS_NAME: PCWSTR = w!("my_window_class");
 
     pub fn new(x: i32, y: i32, width: i32, height: i32, img: &Image) -> Self {

@@ -1,7 +1,9 @@
 [package]
-name = "img"
+name = "img-renderer-rs"
 version = "0.1.0"
 edition = "2024"
+
+[dependencies]
 
 [dependencies.windows]
 version = "0.62.2"
@@ -15,6 +17,3 @@ features = [
     "Win32_Graphics_Dxgi_Common",
     "Win32_Security"
 ]
-
-[dependencies]
-img-renderer-rs = { path = "../lib/img-renderer-rs" }

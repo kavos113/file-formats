@@ -1,6 +1,6 @@
-use crate::img::Image;
-use crate::render::d3d::object::Object;
-use crate::render::d3d::pipeline::Pipeline;
+use crate::Image;
+use crate::d3d::object::Object;
+use crate::d3d::pipeline::Pipeline;
 use windows::Win32::Foundation::{HANDLE, HWND, RECT};
 use windows::Win32::Graphics::Direct3D::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 use windows::Win32::Graphics::Direct3D12::{

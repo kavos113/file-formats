@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::fs;
-use crate::img::{Image, Pixel};
+use img_renderer_rs::{Image, Pixel};
 use crate::reader::Reader;
 
 pub fn load_bmp(path: &str) -> Image {
