@@ -1,6 +1,7 @@
 use crate::fmt::algorithm::deflate::analyze_file;
 use crate::fmt::central_directory::{CentralDirectoryHeader, CompressionMethod};
 use crate::reader::{BitReader, Reader};
+use crate::writer::Writer;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
 
@@ -18,7 +19,10 @@ pub fn decompress_file(r: &mut BufReader<File>, header: &CentralDirectoryHeader)
         }
         CompressionMethod::Deflated => {
             let mut bit_reader = BitReader::new(r);
-            analyze_file(&mut bit_reader, &mut out);
+            let mut writer = Writer::new(out);
+            analyze_file(&mut bit_reader, &mut writer);
+
+            writer.close();
         }
         _ => panic!(
             "Unsupported compression method: {}",
