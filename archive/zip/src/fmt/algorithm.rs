@@ -9,6 +9,13 @@ mod deflate;
 
 pub fn decompress_file(r: &mut BufReader<File>, header: &CentralDirectoryHeader) {
     let local_header = LocalFileHeader::load_from(r);
+
+    let is_dir = local_header.file_name.ends_with('/');
+    if is_dir {
+        std::fs::create_dir_all(&local_header.file_name).unwrap();
+        return;
+    }
+
     let mut out = File::create(&local_header.file_name).unwrap();
 
     match local_header.compression_method {

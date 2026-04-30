@@ -40,10 +40,10 @@ pub fn analyze_file<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
             // println!("code_length_codes: {:?}", code_length_codes);
 
             let code_length_code_table = build_code_table(&code_length_codes);
-            for i in 0..code_length_code_table.len() {
-                println!("code: {:03b}, symbol: {}, length: {}",
-                    i, code_length_code_table[i].symbol, code_length_code_table[i].length);
-            }
+            // for i in 0..code_length_code_table.len() {
+            //     println!("code: {:03b}, symbol: {}, length: {}",
+            //         i, code_length_code_table[i].symbol, code_length_code_table[i].length);
+            // }
 
             let max_length = code_length_codes.iter().map(|cl| cl.length).max().unwrap_or(0);
             let mut literal_length_codes = Vec::new();
@@ -154,14 +154,14 @@ pub fn analyze_file<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
             let literal_code_table_max_length = literal_length_codes.iter().map(|cl| cl.length).max().unwrap_or(0);
             let distance_code_table_max_length = distance_codes.iter().map(|cl| cl.length).max().unwrap_or(0);
 
-            for i in 0..literal_code_table.len() {
-                println!("literal code: {:b}, symbol: {}, length: {}",
-                    i, literal_code_table[i].symbol, literal_code_table[i].length);
-            }
-            for i in 0..distance_code_table.len() {
-                println!("distance code: {:b}, symbol: {}, length: {}",
-                    i, distance_code_table[i].symbol, distance_code_table[i].length);
-            }
+            // for i in 0..literal_code_table.len() {
+            //     println!("literal code: {:b}, symbol: {}, length: {}",
+            //         i, literal_code_table[i].symbol, literal_code_table[i].length);
+            // }
+            // for i in 0..distance_code_table.len() {
+            //     println!("distance code: {:b}, symbol: {}, length: {}",
+            //         i, distance_code_table[i].symbol, distance_code_table[i].length);
+            // }
 
             loop {
                 let code = r.peek_bits_rev(literal_code_table_max_length as usize);
@@ -171,7 +171,7 @@ pub fn analyze_file<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
 
                 match literal_code.symbol {
                     0..=255 => {
-                        println!("literal: {} {}", literal_code.symbol as u8 as char, literal_code.symbol);
+                        // println!("literal: {} {}", literal_code.symbol as u8 as char, literal_code.symbol);
                         w.write_u8(literal_code.symbol as u8);
                     }
 
@@ -196,7 +196,7 @@ pub fn analyze_file<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                         let additional = r.read_bits(distance_length_code.bits as usize) as u16;
                         let distance = distance_length_code.offset + additional;
 
-                        println!("copy: length={}, distance={}", length, distance);
+                        // println!("copy: length={}, distance={}", length, distance);
                         w.copy(distance as u64, length as u64);
                     }
                     _ => panic!("Invalid literal/length code: {}", code),
