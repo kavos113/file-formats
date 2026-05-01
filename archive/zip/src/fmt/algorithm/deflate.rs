@@ -122,10 +122,11 @@ pub fn analyze_file<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                     // copy previous code length 3-6 times
                     16 => {
                         let copy_length = r.read_bits(2) + 3;
+                        let previous_length = distance_codes.last().expect("No previous code length to copy").length;
                         for _ in 0..copy_length {
                             distance_codes.push(CodeLength {
                                 symbol: i as u16,
-                                length: code_length_code.symbol as u8,
+                                length: previous_length,
                             });
                             i += 1;
                         }
@@ -168,11 +169,13 @@ pub fn analyze_file<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                 let code = r.peek_bits_rev(literal_code_table_max_length as usize);
                 let literal_code = &literal_code_table[code as usize];
 
+                let bits = r.inspect_bits(32);
+
                 _ = r.read_bits(literal_code.length as usize);
 
                 match literal_code.symbol {
                     0..=255 => {
-                        println!("literal: {} {}", literal_code.symbol as u8 as char, literal_code.symbol);
+                        // println!("literal: {} {}", literal_code.symbol as u8 as char, literal_code.symbol);
                         w.write_u8(literal_code.symbol as u8);
                     }
 
@@ -197,7 +200,16 @@ pub fn analyze_file<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                         let additional = r.read_bits(distance_length_code.bits as usize) as u16;
                         let distance = distance_length_code.offset + additional;
 
-                        println!("copy: length={}, distance={}", length, distance);
+                        // println!("copy: length={}, distance={}, distance symbol={}", length, distance, distance_code.symbol);
+                        // print!("bits: ");
+                        // for b in bits {
+                        //     if b {
+                        //         print!("1");
+                        //     } else {
+                        //         print!("0");
+                        //     }
+                        // }
+                        // println!();
                         w.copy(distance as u64, length as u64);
                     }
                     _ => panic!("Invalid literal/length code: {}", code),
@@ -228,6 +240,8 @@ fn build_code_table(code_lengths: &[CodeLength]) -> Vec<CodeLength> {
 
     let mut code = 0;
     for cl in code_lengths {
+        println!("symbol: {}, length: {}, code: {:b}",
+            cl.symbol, cl.length, code >> (max_length - cl.length));
         for i in 0..(1 << (max_length - cl.length)) {
             code_table[code] = cl.clone();
             code += 1;
@@ -298,15 +312,15 @@ const DISTANCE_CODES: [CodeRecord; 30] = [
     CodeRecord { bits: 8, offset: 513 },
     CodeRecord { bits: 8, offset: 769 },
     CodeRecord { bits: 9, offset: 1025 },
-    CodeRecord { bits:10 , offset :1537},
-    CodeRecord {bits :10 ,offset :2049},
-    CodeRecord {bits :11 ,offset :3073},
-    CodeRecord{bits :11 ,offset :4097},
-    CodeRecord{bits :12 ,offset :6145},
-    CodeRecord{bits :12 ,offset :8193},
-    CodeRecord{bits :13 ,offset :12289},
-    CodeRecord{bits :13 ,offset :16385},
-    CodeRecord{bits :14 ,offset :24577},
+    CodeRecord { bits: 9 , offset: 1537},
+    CodeRecord { bits: 10 ,offset: 2049},
+    CodeRecord { bits: 10 ,offset: 3073},
+    CodeRecord { bits: 11 ,offset: 4097},
+    CodeRecord { bits: 11 ,offset: 6145},
+    CodeRecord { bits: 12 ,offset: 8193},
+    CodeRecord { bits: 12 ,offset: 12289},
+    CodeRecord { bits: 13 ,offset: 16385},
+    CodeRecord { bits: 13 ,offset: 24577},
 ];
 
 #[cfg(test)]

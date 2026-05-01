@@ -13,10 +13,10 @@ pub fn read_file(mut f: File) {
     let central_directory = CentralDirectory::from_record(&mut f, &record);
     println!("{}", central_directory);
 
-    // let mut r = BufReader::new(f);
-    // for header in &central_directory.headers {
-    //     r.seek(SeekFrom::Start(header.local_header_offset as u64))
-    //         .unwrap();
-    //     decompress_file(&mut r, header);
-    // }
+    let mut r = BufReader::new(f);
+    for header in &central_directory.headers {
+        r.seek(SeekFrom::Start(header.actual_header_offset()))
+            .unwrap();
+        decompress_file(&mut r, header);
+    }
 }

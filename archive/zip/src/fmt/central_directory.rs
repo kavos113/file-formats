@@ -267,6 +267,110 @@ impl CentralDirectoryHeader {
             file_comment,
         }
     }
+
+    pub fn actual_compressed_size(&self) -> u64 {
+        if self.compressed_size != 0xffffffff {
+            self.compressed_size as u64
+        } else {
+            self.extra_field
+                .iter()
+                .filter_map(|field| {
+                    if let ExtraField::Zip64(zip64) = field {
+                        Some(zip64.compressed_size)
+                    } else {
+                        None
+                    }
+                })
+                .next()
+                .unwrap_or(0xffff)
+        }
+    }
+
+    pub fn actual_uncompressed_size(&self) -> u64 {
+        if self.uncompressed_size != 0xffffffff {
+            self.uncompressed_size as u64
+        } else {
+            self.extra_field
+                .iter()
+                .filter_map(|field| {
+                    if let ExtraField::Zip64(zip64) = field {
+                        Some(zip64.original_size)
+                    } else {
+                        None
+                    }
+                })
+                .next()
+                .unwrap_or(0xffff)
+        }
+    }
+
+    pub fn actual_header_offset(&self) -> u64 {
+        if self.local_header_offset != 0xffffffff {
+            self.local_header_offset as u64
+        } else {
+            self.extra_field
+                .iter()
+                .filter_map(|field| {
+                    if let ExtraField::Zip64(zip64) = field {
+                        Some(zip64.local_header_offset)
+                    } else {
+                        None
+                    }
+                })
+                .next()
+                .unwrap_or(0xffff_ffff)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_actual_size() {
+        let header = CentralDirectoryHeader {
+            signature: 0x02014b50,
+            version_made_by: 0x0314,
+            version_needed: 0x0014,
+            general_purpose_flag: 0,
+            compression_method: CompressionMethod::Deflated,
+            last_mod_time: 0,
+            last_mod_date: 0,
+            crc32: 0,
+            compressed_size: 0xffffffff,
+            uncompressed_size: 0xffffffff,
+            file_name_length: 0,
+            extra_field_length: 20,
+            file_comment_length: 0,
+            disk_number_start: 0,
+            internal_file_attributes: 0,
+            external_file_attributes: 0,
+            local_header_offset: 0,
+            file_name: String::new(),
+            extra_field: vec![ExtraField::Zip64(ExtraFieldZip64 {
+                header_id: 0x0001,
+                data_size: 16,
+                original_size: 12345678901234567890u64,
+                compressed_size: 9876543210987654321u64,
+                local_header_offset: 0,
+                disk_start_number: 0,
+            })],
+            file_comment: String::new(),
+        };
+
+        assert_eq!(header.actual_compressed_size(), 9876543210987654321u64);
+        assert_eq!(header.actual_uncompressed_size(), 12345678901234567890u64);
+
+        let header = CentralDirectoryHeader {
+            compressed_size: 12345,
+            uncompressed_size: 67890,
+            ..header
+        };
+
+        assert_eq!(header.actual_compressed_size(), 12345);
+        assert_eq!(header.actual_uncompressed_size(), 67890);
+    }
 }
 
 impl Display for CentralDirectoryHeader {

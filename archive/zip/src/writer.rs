@@ -4,6 +4,7 @@ use std::io::{BufWriter, Write};
 pub struct Writer {
     buffer: Vec<u8>,
     out: BufWriter<File>,
+    pub written_bytes: u64,
 }
 
 impl Writer {
@@ -15,11 +16,13 @@ impl Writer {
         Writer {
             buffer: Vec::with_capacity(Self::BUFFER_SIZE),
             out: BufWriter::new(out),
+            written_bytes: 0
         }
     }
 
     pub fn write_u8(&mut self, value: u8) {
         self.buffer.push(value);
+        self.written_bytes += 1;
 
         if self.buffer.len() >= Self::BUFFER_SIZE {
             self.flush();
@@ -27,6 +30,7 @@ impl Writer {
     }
 
     pub fn copy(&mut self, distance: u64, length: u64) {
+        println!("copying: distance={}, length={}, current written_bytes={}", distance, length, self.written_bytes);
         let copy_range: Vec<_> = self.buffer[self.buffer.len() - distance as usize..]
             .iter()
             .cloned()

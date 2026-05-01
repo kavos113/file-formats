@@ -190,6 +190,19 @@ impl<'a, R: Read> BitReader<'a, R> {
         (self.buffer & ((1u64 << n) - 1)).reverse_bits() >> (64 - n)
     }
 
+    pub fn inspect_bits(&mut self, n: usize) -> Vec<bool> {
+        while self.remain_bits < n {
+            self.fill_buffer();
+        }
+
+        let mut bits = Vec::with_capacity(n);
+        for i in 0..n {
+            bits.push((self.buffer & (1u64 << i)) != 0);
+        }
+
+        bits
+    }
+
     pub fn align_to_byte(&mut self) {
         let skip_bits = self.remain_bits % 8;
         if skip_bits > 0 {
