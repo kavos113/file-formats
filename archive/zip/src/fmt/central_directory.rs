@@ -567,14 +567,29 @@ impl ExtraFieldZip64 {
         }
 
         let data_size = reader.read_u16();
-        if data_size != 28 {
-            panic!("Invalid Zip64 extra field data size: {}", data_size);
-        }
+
+        let mut remain_data_size = data_size;
 
         let original_size = reader.read_u64();
         let compressed_size = reader.read_u64();
-        let local_header_offset = reader.read_u64();
-        let disk_start_number = reader.read_u32();
+        remain_data_size -= 16;
+
+        let local_header_offset = if remain_data_size >= 8 {
+            remain_data_size -= 8;
+            reader.read_u64()
+        } else {
+            0
+        };
+        let disk_start_number = if remain_data_size >= 4 {
+            remain_data_size -= 4;
+            reader.read_u32()
+        } else {
+            0
+        };
+
+        if remain_data_size != 0 {
+            panic!("Invalid Zip64 extra field data size: {}", data_size);
+        }
 
         Self {
             header_id,
