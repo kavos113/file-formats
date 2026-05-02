@@ -4,6 +4,7 @@ use crate::reader::{BitReader, Reader};
 use crate::writer::Writer;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
+use std::path::Path;
 
 mod deflate;
 
@@ -16,7 +17,11 @@ pub fn decompress_file(r: &mut BufReader<File>, header: &CentralDirectoryHeader)
         return;
     }
 
-    let mut out = File::create(&local_header.file_name).unwrap();
+    let out_path = Path::new(&local_header.file_name);
+    if let Some(parent) = out_path.parent() {
+        std::fs::create_dir_all(parent).unwrap();
+    }
+    let mut out = File::create(out_path).unwrap();
 
     match local_header.compression_method {
         CompressionMethod::Stored => {

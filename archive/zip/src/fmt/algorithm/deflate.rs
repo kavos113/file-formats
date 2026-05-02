@@ -23,11 +23,62 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
 
     match block_type {
         0b00 => {
-            // stored
+            println!("stored block");
+            r.align_to_byte();
+            let len = r.read_bits(16) as u16;
+            let nlen = r.read_bits(16) as u16;
+
+            if len != !nlen {
+                panic!("Invalid uncompressed block: len and nlen do not match: len={}, nlen={}", len, nlen);
+            }
+
+            for _ in 0..len {
+                let byte = r.read_bits(8) as u8;
+                w.write_u8(byte);
+            }
         }
 
         0b01 => {
-            // fixed huffman
+            println!("fixed Huffman block");
+            let code_table = build_code_table(&FIXED_HUFFMAN_LITERAL_LENGTH_CODES);
+
+            loop {
+                let code = r.peek_bits_rev(9);
+                let literal_code = &code_table[code as usize];
+
+                _ = r.read_bits(literal_code.length as usize);
+
+                match literal_code.symbol {
+                    0..=255 => {
+                        w.write_u8(literal_code.symbol as u8);
+                    }
+
+                    256 => {
+                        // end of block
+                        break;
+                    }
+
+                    257..=285 => {
+                        let length_code = &LENGTH_CODES[literal_code.symbol as usize - 257];
+                        let additional = r.read_bits(length_code.bits as usize) as u16;
+                        let length = length_code.offset + additional;
+
+                        let distance_code = {
+                            let code = r.peek_bits_rev(5);
+                            let distance_code = &FIXED_HUFFMAN_DISTANCE_CODES[code as usize];
+                            _ = r.read_bits(distance_code.length as usize);
+                            distance_code
+                        };
+
+                        let distance_length_code = &DISTANCE_CODES[distance_code.symbol as usize];
+                        let additional = r.read_bits(distance_length_code.bits as usize) as u16;
+                        let distance = distance_length_code.offset + additional;
+
+                        w.copy(distance as u64, length as u64);
+                    }
+                    _ => panic!("Invalid literal/length code: {}", code),
+                }
+            }
         }
 
         0b10 => {
@@ -231,7 +282,7 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Copy)]
 struct CodeLength {
     symbol: u16,
     length: u8,
@@ -332,6 +383,38 @@ const DISTANCE_CODES: [CodeRecord; 30] = [
     CodeRecord { bits: 13 ,offset: 16385},
     CodeRecord { bits: 13 ,offset: 24577},
 ];
+
+const FIXED_HUFFMAN_LITERAL_LENGTH_CODES: [CodeLength; 288] = {
+    let mut codes = [CodeLength { symbol: 0, length: 0 }; 288];
+    let mut i = 0;
+    while i <= 143 {
+        codes[i] = CodeLength { symbol: i as u16, length: 8 };
+        i += 1;
+    }
+    while i <= 255 {
+        codes[i] = CodeLength { symbol: i as u16, length: 9 };
+        i += 1;
+    }
+    while i <= 279 {
+        codes[i] = CodeLength { symbol: i as u16, length: 7 };
+        i += 1;
+    }
+    while i <= 287 {
+        codes[i] = CodeLength { symbol: i as u16, length: 8 };
+        i += 1;
+    }
+    codes
+};
+
+const FIXED_HUFFMAN_DISTANCE_CODES: [CodeLength; 32] = {
+    let mut codes = [CodeLength { symbol: 0, length: 0 }; 32];
+    let mut i = 0;
+    while i < 32 {
+        codes[i] = CodeLength { symbol: i as u16, length: 5 };
+        i += 1;
+    }
+    codes
+};
 
 #[cfg(test)]
 mod tests {
