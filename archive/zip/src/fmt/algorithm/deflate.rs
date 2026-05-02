@@ -6,9 +6,19 @@ const LENGTH_CODE_ORDER: [u16; 19] = [
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
 ];
 
-// TODO: multiple blocks
 pub fn analyze_file<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
-    let is_final = r.read_bits(1);
+    loop {
+        let is_final = r.peek_bits(1);
+
+        analyze_block(r, w);
+        if is_final == 1 {
+            return;
+        }
+    }
+}
+
+pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
+    r.read_bits(1);
     let block_type = r.read_bits(2);
 
     match block_type {
