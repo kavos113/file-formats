@@ -1,5 +1,7 @@
+use crate::Ordering;
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use crate::dbg_println;
 
 pub struct Writer {
     buffer: Vec<u8>,
@@ -30,7 +32,7 @@ impl Writer {
     }
 
     pub fn copy(&mut self, distance: u64, length: u64) {
-        println!("copying: distance={}, length={}, current written_bytes={}", distance, length, self.written_bytes);
+        dbg_println!("copying: distance={}, length={}, current written_bytes={}", distance, length, self.written_bytes);
         let copy_range: Vec<_> = self.buffer[self.buffer.len() - distance as usize..]
             .iter()
             .cloned()

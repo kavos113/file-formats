@@ -1,5 +1,4 @@
-use std::cmp::{max, min};
-use std::fs::File;
+use std::cmp::min;
 use std::io::{BufReader, Read};
 
 pub struct Reader<'a> {

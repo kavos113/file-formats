@@ -1,6 +1,8 @@
+use crate::Ordering;
 use crate::reader::BitReader;
 use crate::writer::Writer;
 use std::io::Read;
+use crate::dbg_println;
 
 const LENGTH_CODE_ORDER: [u16; 19] = [
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
@@ -23,7 +25,7 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
 
     match block_type {
         0b00 => {
-            println!("stored block");
+            dbg_println!("stored block");
             r.align_to_byte();
             let len = r.read_bits(16) as u16;
             let nlen = r.read_bits(16) as u16;
@@ -39,7 +41,7 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
         }
 
         0b01 => {
-            println!("fixed Huffman block");
+            dbg_println!("fixed Huffman block");
             let code_table = build_code_table(&FIXED_HUFFMAN_LITERAL_LENGTH_CODES);
 
             loop {
@@ -96,13 +98,13 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                 .filter(|cl| cl.length > 0)
                 .collect::<Vec<_>>();
 
-            println!("num_literal_length_codes: {}, num_distance_codes: {}, num_code_length_codes: {}",
+            dbg_println!("num_literal_length_codes: {}, num_distance_codes: {}, num_code_length_codes: {}",
                 num_literal_length_codes, num_distance_codes, num_code_length_codes);
-            println!("code_length_codes: {:?}", code_length_codes);
+            dbg_println!("code_length_codes: {:?}", code_length_codes);
 
             let code_length_code_table = build_code_table(&code_length_codes);
             for i in 0..code_length_code_table.len() {
-                println!("code: {:03b}, symbol: {}, length: {}",
+                dbg_println!("code: {:03b}, symbol: {}, length: {}",
                     i, code_length_code_table[i].symbol, code_length_code_table[i].length);
             }
 
@@ -157,7 +159,7 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                 }
             }
 
-            println!("literal_length_codes: {:?}", literal_length_codes);
+            dbg_println!("literal_length_codes: {:?}", literal_length_codes);
 
             i = 0;
             let mut distance_codes = Vec::new();
@@ -209,7 +211,7 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                 }
             }
 
-            println!("distance_codes: {:?}", distance_codes);
+            dbg_println!("distance_codes: {:?}", distance_codes);
 
             // TODO: distanceが15になったときはまずい
             let literal_code_table = build_code_table(&literal_length_codes);
@@ -218,11 +220,11 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
             let distance_code_table_max_length = distance_codes.iter().map(|cl| cl.length).max().unwrap_or(0);
 
             // for i in 0..literal_code_table.len() {
-            //     println!("literal code: {:b}, symbol: {}, length: {}",
+            //     dbg_println!("literal code: {:b}, symbol: {}, length: {}",
             //         i, literal_code_table[i].symbol, literal_code_table[i].length);
             // }
             // for i in 0..distance_code_table.len() {
-            //     println!("distance code: {:b}, symbol: {}, length: {}",
+            //     dbg_println!("distance code: {:b}, symbol: {}, length: {}",
             //         i, distance_code_table[i].symbol, distance_code_table[i].length);
             // }
 
@@ -236,7 +238,7 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
 
                 match literal_code.symbol {
                     0..=255 => {
-                        // println!("literal: {} {}", literal_code.symbol as u8 as char, literal_code.symbol);
+                        // dbg_println!("literal: {} {}", literal_code.symbol as u8 as char, literal_code.symbol);
                         w.write_u8(literal_code.symbol as u8);
                     }
 
@@ -261,7 +263,7 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                         let additional = r.read_bits(distance_length_code.bits as usize) as u16;
                         let distance = distance_length_code.offset + additional;
 
-                        // println!("copy: length={}, distance={}, distance symbol={}", length, distance, distance_code.symbol);
+                        // dbg_println!("copy: length={}, distance={}, distance symbol={}", length, distance, distance_code.symbol);
                         // print!("bits: ");
                         // for b in bits {
                         //     if b {
@@ -270,7 +272,7 @@ pub fn analyze_block<R: Read>(r: &mut BitReader<R>, w: &mut Writer) {
                         //         print!("0");
                         //     }
                         // }
-                        // println!();
+                        // dbg_println!();
                         w.copy(distance as u64, length as u64);
                     }
                     _ => panic!("Invalid literal/length code: {}", code),
@@ -301,7 +303,7 @@ fn build_code_table(code_lengths: &[CodeLength]) -> Vec<CodeLength> {
 
     let mut code = 0;
     for cl in code_lengths {
-        println!("symbol: {}, length: {}, code: {:b}",
+        dbg_println!("symbol: {}, length: {}, code: {:b}",
             cl.symbol, cl.length, code >> (max_length - cl.length));
         for i in 0..(1 << (max_length - cl.length)) {
             code_table[code] = cl.clone();
