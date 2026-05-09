@@ -1,6 +1,6 @@
 #include "central_directory.h"
 
-Error find_end_of_central_directory_record(FILE *file, EndOfCentralDirectoryRecord *eocd_record)
+Error end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryRecord *eocd_record)
 {
   fseek(file, 0, SEEK_END);
   long file_size = ftell(file);
@@ -29,14 +29,6 @@ Error find_end_of_central_directory_record(FILE *file, EndOfCentralDirectoryReco
     fprintf(stderr, "Failed to read EOCD search buffer.\n");
     free(buf);
     return ERROR_FILE_IO_FAILED;
-  }
-
-  eocd_record = malloc(sizeof(EndOfCentralDirectoryRecord));
-  if (eocd_record == NULL)
-  {
-    fprintf(stderr, "Failed to allocate memory for EOCD record.\n");
-    free(buf);
-    return ERROR_MALLOC_FAILED;
   }
 
   for (long i = size - END_OF_CENTRAL_DIRECTORY_RECORD_SIZE_WITHOUT_COMMENT; i >= 0; i--)
@@ -168,4 +160,8 @@ Error read_central_directory_header(FILE *file, CentralDirectoryHeader *cd_heade
   }
 
   return ERROR_NONE;
+}
+
+Error central_directory_header_read_all(FILE *file, CentralDirectoryHeader **cd_header, EndOfCentralDirectoryRecord *eocd_record)
+{
 }
