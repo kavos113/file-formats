@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "central_directory.h"
 
 void usage(char *program_invocation_short_name)
 {
-  fprintf(stderr, "Usage: %s <zipfile> [<options>]\n", program_invocation_short_name);
+  fprintf(stderr, "Usage: %s [<options>] <zipfile>\n", program_invocation_short_name);
   fprintf(stderr, "Options:\n");
   fprintf(stderr, "  -h, --help    Show this help message and exit.\n");
   fprintf(stderr, "  -v, --version Show version information and exit.\n");
@@ -22,7 +24,7 @@ int main(int argc, char **argv)
   }
 
   int is_print = 0;
-  for (int i = 2; i < argc; i++)
+  for (int i = 1; i < argc - 1; i++)
   {
     if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--print") == 0)
     {
@@ -46,10 +48,10 @@ int main(int argc, char **argv)
     }
   }
 
-  FILE *file = fopen(argv[1], "rb");
+  FILE *file = fopen(argv[argc - 1], "rb");
   if (file == NULL)
   {
-    fprintf(stderr, "Failed to open file: %s\n", argv[1]);
+    fprintf(stderr, "Failed to open file: %s\n", argv[argc - 1]);
     return 1;
   }
 

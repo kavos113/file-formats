@@ -51,8 +51,8 @@ typedef struct CentralDirectoryHeader
 #define CENTRAL_DIRECTORY_HEADER_SIGNATURE 0x02014b50
 
 Error end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryRecord *eocd_record);
-Error end_of_central_directory_record_free(EndOfCentralDirectoryRecord *eocd_record);
-Error end_of_central_directory_record_print(EndOfCentralDirectoryRecord *eocd_record);
+void end_of_central_directory_record_free(EndOfCentralDirectoryRecord *eocd_record);
+void end_of_central_directory_record_print(EndOfCentralDirectoryRecord *eocd_record);
 Error central_directory_header_read_all(FILE *file, CentralDirectoryHeader **cd_header, EndOfCentralDirectoryRecord *eocd_record);
 Error central_directory_header_free(CentralDirectoryHeader *cd_header);
 Error central_directory_header_print(CentralDirectoryHeader *cd_header);

@@ -1,5 +1,8 @@
 #include "central_directory.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 Error end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryRecord *eocd_record)
 {
   fseek(file, 0, SEEK_END);
@@ -33,7 +36,7 @@ Error end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryReco
 
   for (long i = size - END_OF_CENTRAL_DIRECTORY_RECORD_SIZE_WITHOUT_COMMENT; i >= 0; i--)
   {
-    if (memcmp(buf + i, END_OF_CENTRAL_DIRECTORY_RECORD_SIGNATURE, 4) == 0)
+    if ((*(uint32_t *)(buf + i)) == END_OF_CENTRAL_DIRECTORY_RECORD_SIGNATURE)
     {
       memcpy(eocd_record, buf + i, sizeof(EndOfCentralDirectoryRecord) - sizeof(char *));
       if (eocd_record->comment_length > 0)
@@ -61,6 +64,15 @@ Error end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryReco
   fprintf(stderr, "Failed to find EOCD record.\n");
   free(buf);
   return ERROR_FILE_IO_FAILED;
+}
+
+void end_of_central_directory_record_free(EndOfCentralDirectoryRecord *eocd_record)
+{
+  if (eocd_record->comment != NULL)
+  {
+    free(eocd_record->comment);
+    eocd_record->comment = NULL;
+  }
 }
 
 Error read_central_directory_header(FILE *file, CentralDirectoryHeader *cd_header)
