@@ -64,11 +64,28 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  fclose(file);
   if (is_print)
   {
     end_of_central_directory_record_print(&eocd_record);
   }
+
+  CentralDirectoryHeader *headers = NULL;
+  error = central_directory_header_read_all(file, &headers, &eocd_record);
+  if (error != ERROR_NONE)
+  {
+    fprintf(stderr, "Failed to read central directory headers.\n");
+    end_of_central_directory_record_free(&eocd_record);
+    fclose(file);
+    return 1;
+  }
+
+  if (is_print)
+  {
+    central_directory_header_print_all(&headers);
+  }
+
+  fclose(file);
   end_of_central_directory_record_free(&eocd_record);
+  central_directory_header_free(headers);
   return 0;
 }

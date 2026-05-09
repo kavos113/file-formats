@@ -75,101 +75,103 @@ void end_of_central_directory_record_free(EndOfCentralDirectoryRecord *eocd_reco
   }
 }
 
-Error read_central_directory_header(FILE *file, CentralDirectoryHeader *cd_header)
+Error read_central_directory_header(FILE *file, CentralDirectoryHeader **cd_header)
 {
-  cd_header = malloc(sizeof(CentralDirectoryHeader));
-  if (cd_header == NULL)
+  CentralDirectoryHeader *header = malloc(sizeof(CentralDirectoryHeader));
+  if (header == NULL)
   {
     fprintf(stderr, "Failed to allocate memory for central directory header.\n");
     return ERROR_MALLOC_FAILED;
   }
 
-  size_t read_size = fread(cd_header, sizeof(CentralDirectoryHeader) - sizeof(char *) * 3, 1, file);
+  size_t read_size = fread(header, sizeof(CentralDirectoryHeader) - sizeof(char *) * 3, 1, file);
   if (read_size != 1)
   {
     fprintf(stderr, "Failed to read central directory header.\n");
     return ERROR_FILE_IO_FAILED;
   }
 
-  if (cd_header->signature != CENTRAL_DIRECTORY_HEADER_SIGNATURE)
+  if (header->signature != CENTRAL_DIRECTORY_HEADER_SIGNATURE)
   {
     fprintf(stderr, "Invalid central directory header signature.\n");
     return ERROR_FILE_IO_FAILED;
   }
 
-  if (cd_header->file_name_length == 0)
+  if (header->file_name_length == 0)
   {
-    cd_header->file_name = NULL;
+    header->file_name = NULL;
   }
   else
   {
-    cd_header->file_name = (char *)malloc(cd_header->file_name_length + 1);
-    if (cd_header->file_name == NULL)
+    header->file_name = (char *)malloc(header->file_name_length + 1);
+    if (header->file_name == NULL)
     {
       fprintf(stderr, "Failed to allocate memory for file name.\n");
       return ERROR_MALLOC_FAILED;
     }
 
-    read_size = fread(cd_header->file_name, sizeof(char), cd_header->file_name_length, file);
-    if (read_size != cd_header->file_name_length)
+    read_size = fread(header->file_name, sizeof(char), header->file_name_length, file);
+    if (read_size != header->file_name_length)
     {
       fprintf(stderr, "Failed to read file name.\n");
-      free(cd_header->file_name);
+      free(header->file_name);
       return ERROR_FILE_IO_FAILED;
     }
-    cd_header->file_name[cd_header->file_name_length] = '\0';
+    header->file_name[header->file_name_length] = '\0';
   }
 
-  if (cd_header->extra_field_length == 0)
+  if (header->extra_field_length == 0)
   {
-    cd_header->extra_field = NULL;
+    header->extra_field = NULL;
   }
   else
   {
-    cd_header->extra_field = (char *)malloc(cd_header->extra_field_length);
-    if (cd_header->extra_field == NULL)
+    header->extra_field = (char *)malloc(header->extra_field_length);
+    if (header->extra_field == NULL)
     {
       fprintf(stderr, "Failed to allocate memory for extra field.\n");
-      free(cd_header->file_name);
+      free(header->file_name);
       return ERROR_MALLOC_FAILED;
     }
 
-    read_size = fread(cd_header->extra_field, sizeof(char), cd_header->extra_field_length, file);
-    if (read_size != cd_header->extra_field_length)
+    read_size = fread(header->extra_field, sizeof(char), header->extra_field_length, file);
+    if (read_size != header->extra_field_length)
     {
       fprintf(stderr, "Failed to read extra field.\n");
-      free(cd_header->file_name);
-      free(cd_header->extra_field);
+      free(header->file_name);
+      free(header->extra_field);
       return ERROR_FILE_IO_FAILED;
     }
   }
 
-  if (cd_header->file_comment_length == 0)
+  if (header->file_comment_length == 0)
   {
-    cd_header->file_comment = NULL;
+    header->file_comment = NULL;
   }
   else
   {
-    cd_header->file_comment = (char *)malloc(cd_header->file_comment_length + 1);
-    if (cd_header->file_comment == NULL)
+    header->file_comment = (char *)malloc(header->file_comment_length + 1);
+    if (header->file_comment == NULL)
     {
       fprintf(stderr, "Failed to allocate memory for file comment.\n");
-      free(cd_header->file_name);
-      free(cd_header->extra_field);
+      free(header->file_name);
+      free(header->extra_field);
       return ERROR_MALLOC_FAILED;
     }
 
-    read_size = fread(cd_header->file_comment, sizeof(char), cd_header->file_comment_length, file);
-    if (read_size != cd_header->file_comment_length)
+    read_size = fread(header->file_comment, sizeof(char), header->file_comment_length, file);
+    if (read_size != header->file_comment_length)
     {
       fprintf(stderr, "Failed to read file comment.\n");
-      free(cd_header->file_name);
-      free(cd_header->extra_field);
-      free(cd_header->file_comment);
+      free(header->file_name);
+      free(header->extra_field);
+      free(header->file_comment);
       return ERROR_FILE_IO_FAILED;
     }
-    cd_header->file_comment[cd_header->file_comment_length] = '\0';
+    header->file_comment[header->file_comment_length] = '\0';
   }
+
+  *cd_header = header;
 
   return ERROR_NONE;
 }
