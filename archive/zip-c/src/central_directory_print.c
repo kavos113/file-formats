@@ -1,6 +1,7 @@
 #include "central_directory.h"
 
-void end_of_central_directory_record_print(EndOfCentralDirectoryRecord *eocd_record)
+void
+end_of_central_directory_record_print(EndOfCentralDirectoryRecord *eocd_record)
 {
   printf("----- End of Central Directory Record -----\n");
   printf("  Signature:                    0x%08x\n", eocd_record->signature);

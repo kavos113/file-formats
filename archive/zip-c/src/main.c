@@ -4,7 +4,8 @@
 
 #include "central_directory.h"
 
-void usage(char *program_invocation_short_name)
+void
+usage(char *program_invocation_short_name)
 {
   fprintf(stderr, "Usage: %s [<options>] <zipfile>\n", program_invocation_short_name);
   fprintf(stderr, "Options:\n");
@@ -15,7 +16,8 @@ void usage(char *program_invocation_short_name)
 
 char *version = "1.0.0";
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
   if (argc < 2)
   {

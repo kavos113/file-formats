@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-Error end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryRecord *eocd_record)
+Error
+end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryRecord *eocd_record)
 {
   fseek(file, 0, SEEK_END);
   long file_size = ftell(file);
@@ -66,7 +67,8 @@ Error end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryReco
   return ERROR_FILE_IO_FAILED;
 }
 
-void end_of_central_directory_record_free(EndOfCentralDirectoryRecord *eocd_record)
+void
+end_of_central_directory_record_free(EndOfCentralDirectoryRecord *eocd_record)
 {
   if (eocd_record->comment != NULL)
   {
@@ -75,7 +77,8 @@ void end_of_central_directory_record_free(EndOfCentralDirectoryRecord *eocd_reco
   }
 }
 
-Error read_central_directory_header(FILE *file, CentralDirectoryHeader **cd_header)
+Error
+read_central_directory_header(FILE *file, CentralDirectoryHeader **cd_header)
 {
   CentralDirectoryHeader *header = malloc(sizeof(CentralDirectoryHeader));
   if (header == NULL)
@@ -176,6 +179,7 @@ Error read_central_directory_header(FILE *file, CentralDirectoryHeader **cd_head
   return ERROR_NONE;
 }
 
-Error central_directory_header_read_all(FILE *file, CentralDirectoryHeader **cd_header, EndOfCentralDirectoryRecord *eocd_record)
+Error
+central_directory_header_read_all(FILE *file, CentralDirectoryHeader **cd_header, EndOfCentralDirectoryRecord *eocd_record)
 {
 }
