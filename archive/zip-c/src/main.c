@@ -83,11 +83,11 @@ main(int argc, char **argv)
 
   if (is_print)
   {
-    central_directory_header_print_all(&headers);
+    central_directory_header_print_all(&headers, eocd_record.total_entries);
   }
 
   fclose(file);
   end_of_central_directory_record_free(&eocd_record);
-  central_directory_header_free(headers);
+  central_directory_header_free_all(&headers, eocd_record.total_entries);
   return 0;
 }

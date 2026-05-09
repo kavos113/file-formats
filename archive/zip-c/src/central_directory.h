@@ -6,6 +6,7 @@
 
 #include "error.h"
 
+#pragma pack(push, 1)
 typedef struct EndOfCentralDirectoryRecord
 {
   uint32_t signature;
@@ -18,13 +19,15 @@ typedef struct EndOfCentralDirectoryRecord
   uint16_t comment_length;
   char *comment;
 } EndOfCentralDirectoryRecord;
+#pragma pack(pop)
 
 #define END_OF_CENTRAL_DIRECTORY_RECORD_SIGNATURE            0x06054b50
 #define END_OF_CENTRAL_DIRECTORY_RECORD_SIZE_WITHOUT_COMMENT 22
 #define END_OF_CENTRAL_DIRECTORY_RECORD_MAX_COMMENT_SIZE     65535
 #define END_OF_CENTRAL_DIRECTORY_RECORD_MAX_SIZE             (END_OF_CENTRAL_DIRECTORY_RECORD_SIZE_WITHOUT_COMMENT + END_OF_CENTRAL_DIRECTORY_RECORD_MAX_COMMENT_SIZE)
 
-typedef struct CentralDirectoryHeader
+#pragma pack(push, 1)
+typedef struct CentralDirectoryHeaderFixed
 {
   uint32_t signature;
   uint16_t version_made_by;
@@ -43,6 +46,12 @@ typedef struct CentralDirectoryHeader
   uint16_t internal_file_attributes;
   uint32_t external_file_attributes;
   uint32_t relative_offset_local_header;
+} CentralDirectoryHeaderFixed;
+#pragma pack(pop)
+
+typedef struct CentralDirectoryHeader
+{
+  CentralDirectoryHeaderFixed *fixed;
   char *file_name;
   char *extra_field;
   char *file_comment;
@@ -54,8 +63,8 @@ Error end_of_central_directory_record_find(FILE *file, EndOfCentralDirectoryReco
 void end_of_central_directory_record_free(EndOfCentralDirectoryRecord *eocd_record);
 void end_of_central_directory_record_print(EndOfCentralDirectoryRecord *eocd_record);
 Error central_directory_header_read_all(FILE *file, CentralDirectoryHeader **cd_header, EndOfCentralDirectoryRecord *eocd_record);
-void central_directory_header_free(CentralDirectoryHeader *cd_header);
-void central_directory_header_print_all(CentralDirectoryHeader **cd_header);
+void central_directory_header_free_all(CentralDirectoryHeader **cd_header, uint16_t num_headers);
+void central_directory_header_print_all(CentralDirectoryHeader **cd_header, uint16_t num_headers);
 
 #define CENTRAL_DIRECTORY_VERSION_MADE_BY_MSDOS         0
 #define CENTRAL_DIRECTORY_VERSION_MADE_BY_AMIGA         1
