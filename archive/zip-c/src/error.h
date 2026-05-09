@@ -1,0 +1,6 @@
+typedef enum
+{
+  ERROR_NONE,
+  ERROR_MALLOC_FAILED,
+  ERROR_FILE_IO_FAILED,
+} Error;
